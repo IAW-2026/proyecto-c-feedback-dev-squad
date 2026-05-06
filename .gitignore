@@ -6,6 +6,25 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 **/*.log
-*.env.local
+
+# environment files
+.env
+.env.local
+.env.*.local
+
 # clerk configuration (can include secrets)
 /.clerk/
+
+# next.js
+next-env.d.ts
+
+# vercel
+.vercel
+
+# IDEs
+.vscode/
+.idea/
+
+# lock files
+pnpm-lock.yaml
+yarn.lock

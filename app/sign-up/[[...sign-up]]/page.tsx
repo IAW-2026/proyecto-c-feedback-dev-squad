@@ -2,10 +2,31 @@ import { SignUp } from '@clerk/nextjs'
 
 export default function SignUpPage() {
   return (
-    <main>
-      <div className="page-content">
-        <h1>Registrarse</h1>
-        <SignUp />
+    <main className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Registrarse
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Crea tu cuenta en Feedback App
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+          <SignUp 
+            appearance={{
+              elements: {
+                card: "shadow-none border-0",
+                headerTitle: "text-gray-900 dark:text-white text-2xl font-bold",
+                headerSubtitle: "text-gray-600 dark:text-gray-300",
+                socialButtonsBlockButton: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600",
+                formFieldInput: "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-blue-500",
+                formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-white",
+                footerActionLink: "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300",
+              }
+            }}
+          />
+        </div>
       </div>
     </main>
   )

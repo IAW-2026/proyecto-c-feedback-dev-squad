@@ -1,20 +1,43 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server'
 
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin(.*)'])
 
 export default clerkMiddleware(async (auth, req) => {
-  const { isAuthenticated, redirectToSignIn } = await auth()
+  const { isAuthenticated, redirectToSignIn, sessionClaims } = await auth()
+  const pathname = req.nextUrl.pathname
+
+  if (pathname === '/dashboard' || pathname === '/admin') {
+    return Response.redirect(new URL('/', req.url))
+  }
 
   if (!isAuthenticated && isProtectedRoute(req)) {
     return redirectToSignIn()
+  }
+
+  if (isAuthenticated && pathname.startsWith('/admin')) {
+    const userId = (sessionClaims as any)?.sub
+    if (!userId) {
+      return Response.redirect(new URL('/?error=no_privileges', req.url))
+    }
+    
+    try {
+      const client = await clerkClient()
+      const user = await client.users.getUser(userId)
+      const role = (user as any)?.publicMetadata?.role
+      
+      if (role !== 'admin') {
+        return Response.redirect(new URL('/?error=no_privileges', req.url))
+      }
+    } catch (error) {
+      console.error('Error fetching user from Clerk:', error)
+      return Response.redirect(new URL('/?error=no_privileges', req.url))
+    }
   }
 })
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 }
