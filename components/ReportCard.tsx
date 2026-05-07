@@ -1,0 +1,173 @@
+'use client'
+
+import { useState } from 'react'
+import type { Report } from '../types'
+import StarRating from './StarRating'
+
+interface Props {
+  report: Report
+  onResolve?: (reportId: string, action: 'dismiss' | 'remove', comment?: string) => void
+  resolving?: boolean
+}
+
+export default function ReportCard({ report, onResolve, resolving }: Props) {
+  const [showModal, setShowModal] = useState(false)
+  const [selectedAction, setSelectedAction] = useState<'dismiss' | 'remove' | null>(null)
+  const [comment, setComment] = useState('')
+
+  const handleOpenModal = (action: 'dismiss' | 'remove') => {
+    setSelectedAction(action)
+    setComment('')
+    setShowModal(true)
+  }
+
+  const handleConfirm = () => {
+    if (!selectedAction || !onResolve) return
+    onResolve(report.id, selectedAction, comment)
+    setShowModal(false)
+    setSelectedAction(null)
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white">
+            Reporte de {report.reporterName ?? 'Usuario'}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {new Date(report.fecha).toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </p>
+        </div>
+        {report.resuelto ? (
+          <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            Resuelto
+          </span>
+        ) : (
+          <span className="text-xs font-medium px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            Pendiente
+          </span>
+        )}
+      </div>
+
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
+        <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+          Motivo del reporte
+        </p>
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {report.razon}
+        </p>
+      </div>
+
+      {report.review && (
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            Reseña reportada
+          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {report.review.userName ?? 'Usuario'}
+            </span>
+            <span className="text-xs text-gray-400">
+              {new Date(report.review.fecha).toLocaleDateString('es-ES')}
+            </span>
+          </div>
+          {report.review.tipo === 'product' && report.review.sellerName && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Vendedor: {report.review.sellerName}
+            </p>
+          )}
+          <StarRating rating={report.review.rating} size="sm" />
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+            &ldquo;{report.review.comentario}&rdquo;
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {report.review.targetName ?? (report.review.tipo === 'product' ? 'Producto' : 'Vendedor')}
+          </p>
+        </div>
+      )}
+
+      {report.resuelto && report.resolvedBy && (
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+              Resuelto por {report.resolvedBy}
+            </p>
+            {report.adminComment && (
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                &ldquo;{report.adminComment}&rdquo;
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!report.resuelto && onResolve && (
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 flex gap-3">
+          <button
+            onClick={() => handleOpenModal('dismiss')}
+            disabled={resolving}
+            className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+          >
+            Desestimar reporte
+          </button>
+          <button
+            onClick={() => handleOpenModal('remove')}
+            disabled={resolving}
+            className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+          >
+            Eliminar reseña
+          </button>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" onClick={() => setShowModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {selectedAction === 'dismiss' ? 'Desestimar reporte' : 'Eliminar reseña'}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {selectedAction === 'dismiss'
+                ? 'El reporte se marcará como resuelto y la reseña quedará publicada.'
+                : 'La reseña se eliminará y el reporte quedará resuelto. Esta acción no se puede deshacer.'}
+            </p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Comentario (opcional)
+            </label>
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={2}
+              placeholder="Agregá un comentario..."
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handleConfirm}
+                disabled={resolving}
+                className={`flex-1 py-2 rounded-lg text-white font-medium text-sm disabled:opacity-50 transition-colors ${
+                  selectedAction === 'dismiss' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {resolving ? 'Procesando...' : 'Confirmar'}
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
