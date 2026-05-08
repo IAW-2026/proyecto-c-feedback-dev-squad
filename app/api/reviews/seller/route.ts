@@ -1,27 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '../../../../lib/prisma'
 
-/*
-  POST /api/reviews/seller
-  Crea una reseña de vendedor.
+export async function POST(req: NextRequest) {
+  // TODO: agregar validateApiKey() cuando se defina con el equipo
+  try {
+    const body = await req.json()
+    const { targetId, userId, userName, rating, comentario, targetName } = body
 
-  TODO:
-  - Parsea el body como JSON
-  - Valida los campos: targetId (string), rating (number 1-5), comentario (string no vacío)
-  - Crea la Review en DB con prisma.review.create({
+    if (!targetId || typeof targetId !== 'string') {
+      return NextResponse.json({ error: 'targetId es requerido' }, { status: 400 })
+    }
+    if (!userId || typeof userId !== 'string') {
+      return NextResponse.json({ error: 'userId es requerido' }, { status: 400 })
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return NextResponse.json({ error: 'rating debe ser un número entero entre 1 y 5' }, { status: 400 })
+    }
+    if (!comentario || typeof comentario !== 'string' || comentario.trim().length < 10) {
+      return NextResponse.json({ error: 'comentario debe tener al menos 10 caracteres' }, { status: 400 })
+    }
+
+    const review = await prisma.review.create({
       data: {
         tipo: 'seller',
         targetId,
-        userId, // idealmente vendría del body o se asigna según quién llama
+        targetName: targetName ?? null,
+        userId,
+        userName: userName ?? null,
         rating,
         comentario,
-        estado: 'published'
-      }
+        estado: 'published',
+      },
     })
-  - Retorna 201 con la review creada
-  - Si faltan campos o rating es inválido → 400 { error: mensaje }
-  - Si hay error de DB → 500 { error: mensaje }
-*/
 
-export async function POST(req: NextRequest) {
-  return NextResponse.json({ message: 'Not implemented' }, { status: 501 })
+    return NextResponse.json(review, { status: 201 })
+  } catch (error) {
+    console.error('Error al crear reseña de vendedor:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }

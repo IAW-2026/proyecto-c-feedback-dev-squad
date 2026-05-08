@@ -1,24 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '../../../../../lib/prisma'
+import { getTargetReviews, getProductStats } from '../../../../../services/db'
+import { generateReviewSummary } from '../../../../../lib/gemini'
 
-/*
-  GET /api/reviews/product/[id]
-  Obtiene reseñas de un producto.
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  // TODO: agregar validateApiKey() cuando se defina con el equipo
+  try {
+    const { id: targetId } = await params
+    if (!targetId) {
+      return NextResponse.json({ error: 'targetId es requerido' }, { status: 400 })
+    }
 
-  TODO:
-  - Extrae el [id] de los params (req.nextUrl.pathname o params)
-  - Lee query params opcionales: page (default 1), limit (default 10), search
-  - Busca en DB con prisma.review.findMany({
-      where: { targetId: id, tipo: 'product', estado: 'published' },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { fecha: 'desc' }
-    })
-  - También cuenta el total con prisma.review.count({ where: ... })
-  - Retorna 200 con PaginatedResponse: { data, total, page, limit, totalPages }
-  - Si no encuentra reviews → 200 con data vacío (no 404)
-  - Si hay error de DB → 500 { error: mensaje }
-*/
+    const url = new URL(req.url)
+    const page = Number(url.searchParams.get('page')) || 1
+    const limit = Number(url.searchParams.get('limit')) || 10
+    const search = url.searchParams.get('search') || ''
+    const includeSummary = url.searchParams.get('includeSummary') === 'true'
 
-export async function GET(req: NextRequest) {
-  return NextResponse.json({ message: 'Not implemented' }, { status: 501 })
+    const result = await getTargetReviews(targetId, 'product', { page, limit, search })
+
+    if (includeSummary) {
+      const stats = await getProductStats(targetId)
+
+      const allReviews = await prisma.review.findMany({
+        where: { targetId, tipo: 'product', estado: 'published' },
+        take: 50,
+        orderBy: { fecha: 'desc' },
+      })
+
+      let aiSummary: string | undefined
+      if (allReviews.length > 0) {
+        const targetName = url.searchParams.get('name') || allReviews[0].targetName || 'el producto'
+        aiSummary = await generateReviewSummary(targetName, allReviews)
+      }
+
+      return NextResponse.json({ ...result, stats, aiSummary })
+    }
+
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error('Error al obtener reseñas del producto:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }

@@ -56,7 +56,7 @@ export default function ReportesPage() {
 
   const syncUrl = (p: number, s: string, rf: ResolvedFilter) => {
     const params = new URLSearchParams()
-    if (p > 1) params.set('page', String(p))
+    params.set('page', String(p))
     if (s) params.set('search', s)
     if (rf !== 'all') params.set('estado', rf)
     const qs = params.toString()
