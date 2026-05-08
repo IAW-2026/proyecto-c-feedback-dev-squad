@@ -31,8 +31,6 @@
 
 ```bash
 pnpm install
-cp .env.example .env.local
-# Completar .env.local con las credenciales de Clerk y la DB
 pnpm dev
 ```
 
