@@ -58,7 +58,7 @@ export default function MisResenasPage() {
 
   const syncUrl = (p: number, s: string, t: ReviewType | 'all') => {
     const params = new URLSearchParams()
-    if (p > 1) params.set('page', String(p))
+    params.set('page', String(p))
     if (s) params.set('search', s)
     if (t !== 'all') params.set('tipo', t)
     const qs = params.toString()

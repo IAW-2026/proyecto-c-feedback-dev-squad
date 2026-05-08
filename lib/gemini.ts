@@ -1,25 +1,34 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { Report } from '../types'
 
-const HF_TOKEN = process.env.GEMINI_API_KEY ?? process.env.HUGGINGFACE_API_KEY
+const API_KEY = process.env.GEMINI_API_KEY ?? process.env.HUGGINGFACE_API_KEY
+
+async function queryGemini(prompt: string): Promise<string | null> {
+  if (!API_KEY) return null
+  try {
+    const genAI = new GoogleGenerativeAI(API_KEY)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
+    return text.trim() || null
+  } catch {
+    return null
+  }
+}
 
 async function queryHuggingFace(prompt: string): Promise<string | null> {
-  if (!HF_TOKEN) return null
-
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (API_KEY) headers['Authorization'] = `Bearer ${API_KEY}`
     const res = await fetch(
-      'https://api-inference.huggingface.co/models/gpt2',
+      'https://api-inference.huggingface.co/models/google/flan-t5-small',
       {
-        headers: { Authorization: `Bearer ${HF_TOKEN}`, 'Content-Type': 'application/json' },
+        headers,
         method: 'POST',
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: { max_new_tokens: 250, temperature: 0.7, return_full_text: false },
-        }),
+        body: JSON.stringify({ inputs: prompt, parameters: { max_new_tokens: 250, temperature: 0.3 } }),
       },
     )
-
     if (!res.ok) return null
-
     const json = await res.json()
     return (json[0]?.generated_text ?? '').trim()
   } catch {
@@ -28,18 +37,23 @@ async function queryHuggingFace(prompt: string): Promise<string | null> {
 }
 
 export async function getAIOpinion(report: Report): Promise<string> {
-  const prompt = `The following is a report about a review on a marketplace. Analyze it and provide an opinion in Spanish.
+  const prompt = `Analizá el siguiente reporte de una reseña y dame tu opinión en español.
 
-Report reason: "${report.razon}"
-Review author: ${report.review?.userName ?? 'Anonymous'}
-Rating: ${report.review?.rating ?? 'N/A'}/5
-Review text: "${report.review?.comentario ?? 'No comment'}"
-Product/Seller: ${report.review?.targetName ?? 'N/A'}
+Motivo del reporte: "${report.razon}"
+Autor de la reseña: ${report.review?.userName ?? 'Anónimo'}
+Calificación: ${report.review?.rating ?? 'N/A'}/5
+Comentario: "${report.review?.comentario ?? 'Sin comentario'}"
+Producto/Vendedor: ${report.review?.targetName ?? 'N/A'}
 
-Opinion in Spanish:`
+Opinión:`
 
-  const result = await queryHuggingFace(prompt)
-  return result ?? 'La opinión de IA no está disponible en este momento. Intentalo de nuevo más tarde.'
+  const geminiResult = await queryGemini(prompt)
+  if (geminiResult) return geminiResult
+
+  const hfResult = await queryHuggingFace(prompt)
+  if (hfResult) return hfResult
+
+  return 'La opinión de IA no está disponible en este momento. Intentalo de nuevo más tarde.'
 }
 
 export async function generateReviewSummary(
@@ -47,15 +61,20 @@ export async function generateReviewSummary(
   reviews: { rating: number; comentario: string }[],
 ): Promise<string> {
   const reviewsText = reviews
-    .map((r, i) => `Review ${i + 1}: ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)} - "${r.comentario}"`)
+    .map((r, i) => `Reseña ${i + 1}: ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)} - "${r.comentario}"`)
     .join('\n')
 
-  const prompt = `Summarize the following reviews for "${targetName}" in Spanish in 2-3 sentences, highlighting the most mentioned positive and negative aspects.
+  const prompt = `Resumí las siguientes reseñas de "${targetName}" en 2-3 oraciones en español, destacando los aspectos positivos y negativos más mencionados.
 
 ${reviewsText}
 
-Summary in Spanish:`
+Resumen:`
 
-  const result = await queryHuggingFace(prompt)
-  return result ?? 'No se pudo generar un resumen en este momento.'
+  const geminiResult = await queryGemini(prompt)
+  if (geminiResult) return geminiResult
+
+  const hfResult = await queryHuggingFace(prompt)
+  if (hfResult) return hfResult
+
+  return 'No se pudo generar un resumen en este momento.'
 }

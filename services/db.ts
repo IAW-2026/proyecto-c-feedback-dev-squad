@@ -93,6 +93,40 @@ export async function getMyReviews(
   }
 }
 
+export async function getTargetReviews(
+  targetId: string,
+  tipo: 'product' | 'seller',
+  params: PaginationParams,
+): Promise<PaginatedResponse<Review>> {
+  const where: Record<string, unknown> = { targetId, tipo, estado: 'published' }
+
+  if (params.search) {
+    const q = params.search
+    where.OR = [
+      { comentario: { contains: q, mode: 'insensitive' } },
+      { userName: { contains: q, mode: 'insensitive' } },
+    ]
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      orderBy: { fecha: 'desc' },
+      skip: (params.page - 1) * params.limit,
+      take: params.limit,
+    }),
+    prisma.review.count({ where }),
+  ])
+
+  return {
+    data: data as unknown as Review[],
+    total,
+    page: params.page,
+    limit: params.limit,
+    totalPages: Math.ceil(total / params.limit),
+  }
+}
+
 export async function createReview(
   input: CreateReviewInput,
   userId: string,
