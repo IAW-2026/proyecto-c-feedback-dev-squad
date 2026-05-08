@@ -58,6 +58,7 @@ export interface PaginationParams {
   limit: number
   search?: string
   tipo?: ReviewType
+  resolved?: boolean
 }
 
 export interface PaginatedResponse<T> {

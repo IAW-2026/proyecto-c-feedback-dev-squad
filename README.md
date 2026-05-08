@@ -3,7 +3,7 @@
 > Aplicación de reseñas y calificaciones para el marketplace ZapasYA.  
 > Los compradores pueden calificar productos y vendedores, y los administradores moderan reportes sobre reseñas.
 
-🔗 **Deploy:** *pendiente*
+🔗 **Deploy:** *https://proyecto-c-feedback-dev-squad.vercel.app/*
 
 ---
 

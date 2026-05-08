@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useId } from 'react'
 import type { Report } from '../types'
 import StarRating from './StarRating'
+import { getAIOpinionAction } from '../app/actions'
 
 interface Props {
   report: Report
@@ -14,10 +15,38 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
   const [showModal, setShowModal] = useState(false)
   const [selectedAction, setSelectedAction] = useState<'dismiss' | 'remove' | null>(null)
   const [comment, setComment] = useState('')
+  const [aiOpinion, setAiOpinion] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiExpanded, setAiExpanded] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
   const commentId = useId()
+
+  const handleAIOpinion = async () => {
+    if (aiExpanded) {
+      setAiExpanded(false)
+      return
+    }
+    setAiLoading(true)
+    setAiError('')
+    setAiExpanded(true)
+    try {
+      const opinion = await getAIOpinionAction(report.id)
+      setAiOpinion(opinion)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Error desconocido')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleUseSuggestion = () => {
+    setComment(aiOpinion)
+    setAiExpanded(false)
+    setShowModal(true)
+  }
 
   const handleOpenModal = (action: 'dismiss' | 'remove') => {
     setSelectedAction(action)
@@ -138,21 +167,62 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
       )}
 
       {!report.resuelto && onResolve && (
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 flex gap-3">
-          <button
-            onClick={() => handleOpenModal('dismiss')}
-            disabled={resolving}
-            className="flex-1 py-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
-          >
-            Desestimar reporte
-          </button>
-          <button
-            onClick={() => handleOpenModal('remove')}
-            disabled={resolving}
-            className="flex-1 py-3 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
-          >
-            Eliminar reseña
-          </button>
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => handleOpenModal('dismiss')}
+              disabled={resolving}
+              className="flex-1 min-w-[120px] py-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+            >
+              Desestimar reporte
+            </button>
+            <button
+              onClick={() => handleOpenModal('remove')}
+              disabled={resolving}
+              className="flex-1 min-w-[120px] py-3 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+            >
+              Eliminar reseña
+            </button>
+            <button
+              onClick={handleAIOpinion}
+              disabled={aiLoading}
+              className={`flex-1 min-w-[120px] py-3 sm:py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                aiExpanded
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {aiLoading ? 'Analizando...' : aiExpanded ? 'Cerrar IA' : '⚡ Opinión de la IA'}
+            </button>
+          </div>
+
+          {aiExpanded && (
+            <div className="mt-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              {aiLoading ? (
+                <div className="flex items-center gap-3 text-sm text-blue-700 dark:text-blue-300">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span>Analizando reporte con IA...</span>
+                </div>
+              ) : aiError ? (
+                <p className="text-sm text-red-600 dark:text-red-400">{aiError}</p>
+              ) : (
+                <>
+                  <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap leading-relaxed">
+                    {aiOpinion}
+                  </p>
+                  <button
+                    onClick={handleUseSuggestion}
+                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                  >
+                    Usar sugerencia
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 
