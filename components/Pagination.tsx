@@ -25,11 +25,11 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
   }
 
   return (
-    <nav aria-label="Paginación" className="flex items-center justify-center gap-1 mt-8">
+    <nav aria-label="Paginación" className="flex items-center justify-center gap-1 mt-8 flex-wrap">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="px-4 py-3 sm:px-3 sm:py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-w-[44px]"
         aria-label="Página anterior"
       >
         &laquo; Anterior
@@ -44,7 +44,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`min-w-[40px] px-3 py-2 text-sm rounded-lg border transition-colors font-medium ${
+            className={`min-w-[44px] px-3 py-3 sm:py-2 text-sm rounded-lg border transition-colors font-medium ${
               p === page
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -60,7 +60,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="px-4 py-3 sm:px-3 sm:py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-w-[44px]"
         aria-label="Página siguiente"
       >
         Siguiente &raquo;

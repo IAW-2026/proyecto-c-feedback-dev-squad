@@ -8,21 +8,25 @@ datasource db {
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  tipo      String
-  targetId  String
-  userId    String
-  rating    Int
+  id         String   @id @default(uuid())
+  tipo       String
+  targetId   String
+  targetName String?
+  sellerName String?
+  userId     String
+  userName   String?
+  rating     Int
   comentario String
-  estado    String   @default("published")
-  fecha     DateTime @default(now())
-  reports   Report[]
+  estado     String   @default("published")
+  fecha      DateTime @default(now())
+  reports    Report[]
 }
 
 model Report {
   id           String   @id @default(uuid())
   reviewId     String
   reporterId   String
+  reporterName String?
   razon        String
   resuelto     Boolean  @default(false)
   resolvedBy   String?

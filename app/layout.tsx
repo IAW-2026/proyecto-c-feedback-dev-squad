@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes"
 import Header from '../components/Header'
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Header />
-            <Toast />
+            <Suspense fallback={null}>
+              <Toast />
+            </Suspense>
             <main className="flex-1">
               {children}
             </main>

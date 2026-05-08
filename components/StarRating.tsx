@@ -11,7 +11,7 @@ interface Props {
 }
 
 const sizeClasses: Record<Size, { star: string; container: string }> = {
-  sm: { star: 'w-4 h-4', container: 'gap-0.5' },
+  sm: { star: 'w-5 h-5 sm:w-4 sm:h-4', container: 'gap-1 sm:gap-0.5' },
   md: { star: 'w-6 h-6', container: 'gap-1' },
   lg: { star: 'w-8 h-8', container: 'gap-1.5' },
 }
