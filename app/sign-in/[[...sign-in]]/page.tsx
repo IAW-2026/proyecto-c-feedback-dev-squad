@@ -2,9 +2,9 @@ import { SignIn } from '@clerk/nextjs'
 
 export default function SignInPage() {
   return (
-    <main className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
+    <main className="min-h-screen md:min-h-[calc(100vh-8rem)] flex items-start md:items-center justify-center px-4 pt-8 pb-4 md:py-12 bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 hidden md:block">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Iniciar Sesión
           </h1>

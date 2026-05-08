@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { getMyReviews, updateReview, deleteReview } from '../../actions'
 import ReviewCard from '../../../components/ReviewCard'
 import SearchBar from '../../../components/SearchBar'
@@ -10,71 +10,94 @@ import Pagination from '../../../components/Pagination'
 import type { ReviewType, PaginatedResponse, Review, UpdateReviewInput } from '../../../types'
 
 export default function MisResenasPage() {
-  return (
-    <Suspense fallback={<div className="min-h-[calc(100vh-8rem)] flex items-center justify-center text-gray-500 dark:text-gray-400">Cargando...</div>}>
-      <MisResenasContent />
-    </Suspense>
-  )
-}
-
-function MisResenasContent() {
   const { userId } = useAuth()
-  const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
-
-  const page = Number(searchParams.get('page')) || 1
-  const search = searchParams.get('search') || ''
-  const tipoFilter = (searchParams.get('tipo') as ReviewType | 'all') || 'all'
 
   const [data, setData] = useState<PaginatedResponse<Review>>({ data: [], total: 0, page: 1, limit: 6, totalPages: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const updateParams = (updates: Record<string, string | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === '' || value === 'all') {
-        params.delete(key)
-      } else {
-        params.set(key, value)
-      }
-    })
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-  }
-
-  const fetchReviews = useCallback(async () => {
-    if (!userId) return
-    setLoading(true)
-    setError('')
-    try {
-      const result = await getMyReviews(userId, {
-        page,
-        limit: 6,
-        search,
-        tipo: tipoFilter === 'all' ? undefined : tipoFilter,
-      })
-      setData(result)
-    } catch {
-      setError('Error al cargar las reseñas.')
-    } finally {
-      setLoading(false)
-    }
-  }, [userId, page, search, tipoFilter])
-
-  const handleEdit = useCallback(async (id: string, input: UpdateReviewInput) => {
-    await updateReview(id, input)
-    await fetchReviews()
-  }, [fetchReviews])
-
-  const handleDelete = useCallback(async (id: string) => {
-    await deleteReview(id)
-    await fetchReviews()
-  }, [fetchReviews])
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [tipoFilter, setTipoFilter] = useState<ReviewType | 'all'>('all')
 
   useEffect(() => {
+    const syncFromUrl = () => {
+      const sp = new URLSearchParams(window.location.search)
+      setPage(Number(sp.get('page')) || 1)
+      setSearch(sp.get('search') || '')
+      setTipoFilter((sp.get('tipo') as ReviewType | 'all') || 'all')
+    }
+    syncFromUrl()
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
+  }, [])
+
+  useEffect(() => {
+    if (!userId) return
+    const fetchReviews = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const result = await getMyReviews(userId, {
+          page,
+          limit: 6,
+          search,
+          tipo: tipoFilter === 'all' ? undefined : tipoFilter,
+        })
+        setData(result)
+      } catch {
+        setError('Error al cargar las reseñas.')
+      } finally {
+        setLoading(false)
+      }
+    }
     fetchReviews()
-  }, [fetchReviews])
+  }, [userId, page, search, tipoFilter])
+
+  const syncUrl = (p: number, s: string, t: ReviewType | 'all') => {
+    const params = new URLSearchParams()
+    if (p > 1) params.set('page', String(p))
+    if (s) params.set('search', s)
+    if (t !== 'all') params.set('tipo', t)
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
+
+  const updateParams = (updates: Record<string, string | undefined>) => {
+    const newPage = 'page' in updates ? Number(updates.page) || 1 : page
+    const newSearch = 'search' in updates ? (updates.search ?? '') : search
+    const newFilter = 'tipo' in updates ? ((updates.tipo as ReviewType | 'all') || 'all') : tipoFilter
+    setPage(newPage)
+    setSearch(newSearch)
+    setTipoFilter(newFilter)
+    syncUrl(newPage, newSearch, newFilter)
+  }
+
+  const handleEdit = async (id: string, input: UpdateReviewInput) => {
+    if (!userId) return
+    await updateReview(id, input)
+    const result = await getMyReviews(userId, {
+      page,
+      limit: 6,
+      search,
+      tipo: tipoFilter === 'all' ? undefined : tipoFilter,
+    })
+    setData(result)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!userId) return
+    await deleteReview(id)
+    const result = await getMyReviews(userId, {
+      page,
+      limit: 6,
+      search,
+      tipo: tipoFilter === 'all' ? undefined : tipoFilter,
+    })
+    setData(result)
+  }
 
   const filterButtons: { label: string; value: ReviewType | 'all' }[] = [
     { label: 'Todas', value: 'all' },
@@ -94,6 +117,7 @@ function MisResenasContent() {
             <SearchBar
               onSearch={q => updateParams({ search: q || undefined, page: '1' })}
               placeholder="Buscar en mis reseñas..."
+              defaultValue={search}
             />
           </div>
           <div className="flex gap-2">
@@ -146,7 +170,7 @@ function MisResenasContent() {
                 <ReviewCard key={review.id} review={review} editable onUpdate={handleEdit} onDelete={handleDelete} />
               ))}
             </div>
-            <Pagination page={data.page} totalPages={data.totalPages} onPageChange={p => updateParams({ page: String(p) })} />
+            <Pagination page={page} totalPages={data.totalPages} onPageChange={p => updateParams({ page: String(p) })} />
           </>
         )}
       </div>

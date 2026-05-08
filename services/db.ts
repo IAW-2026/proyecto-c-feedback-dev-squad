@@ -231,6 +231,10 @@ export async function getReports(params: PaginationParams): Promise<PaginatedRes
     ]
   }
 
+  if (params.resolved !== undefined) {
+    where.resuelto = params.resolved
+  }
+
   const [data, total] = await Promise.all([
     prisma.report.findMany({
       where,
@@ -288,6 +292,14 @@ export async function createReport(
   ])
 
   return report as unknown as Report
+}
+
+export async function getReportById(id: string): Promise<Report | null> {
+  const report = await prisma.report.findUnique({
+    where: { id },
+    include: { review: true },
+  })
+  return report as unknown as Report | null
 }
 
 export async function resolveReport(

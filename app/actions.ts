@@ -17,7 +17,10 @@ import {
   deleteReview as dbDeleteReview,
   getReports as dbGetReports,
   resolveReport as dbResolveReport,
+  getReportById as dbGetReportById,
 } from '../services/db'
+
+import { getAIOpinion } from '../lib/gemini'
 
 export async function getMyReviews(
   userId: string,
@@ -46,7 +49,7 @@ export async function deleteReview(id: string): Promise<Review | null> {
 }
 
 export async function getReports(
-  params: PaginationParams,
+  params: PaginationParams & { resolved?: boolean },
 ): Promise<PaginatedResponse<Report>> {
   return dbGetReports(params)
 }
@@ -62,4 +65,10 @@ export async function resolveReport(
   options: ResolveOptions,
 ): Promise<Report | null> {
   return dbResolveReport(id, options)
+}
+
+export async function getAIOpinionAction(reportId: string): Promise<string> {
+  const report = await dbGetReportById(reportId)
+  if (!report) throw new Error('Reporte no encontrado')
+  return getAIOpinion(report)
 }

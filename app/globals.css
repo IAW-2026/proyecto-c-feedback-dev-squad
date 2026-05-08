@@ -50,7 +50,7 @@
 
 @layer components {
   .cl-card {
-    @apply shadow-lg !important;
+    @apply shadow-lg;
   }
 
   .cl-rootBox {

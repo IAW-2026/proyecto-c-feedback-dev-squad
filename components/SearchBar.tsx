@@ -11,15 +11,21 @@ interface Props {
 export default function SearchBar({ onSearch, placeholder = 'Buscar...', defaultValue = '' }: Props) {
   const [value, setValue] = useState(defaultValue)
   const initialRef = useRef(true)
+  const onSearchRef = useRef(onSearch)
+  onSearchRef.current = onSearch
+
+  useEffect(() => {
+    setValue(defaultValue)
+  }, [defaultValue])
 
   useEffect(() => {
     if (initialRef.current) {
       initialRef.current = false
       return
     }
-    const timer = setTimeout(() => onSearch(value), 300)
+    const timer = setTimeout(() => onSearchRef.current(value), 300)
     return () => clearTimeout(timer)
-  }, [value, onSearch])
+  }, [value])
 
   return (
     <div className="relative">
