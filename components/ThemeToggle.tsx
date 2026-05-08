@@ -12,7 +12,7 @@ export default function ThemeToggle() {
   }, [])
 
   if (!mounted) {
-    return <button className="w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-600" />
+    return <button className="w-10 h-10 rounded-lg border-2 border-gray-300 dark:border-gray-600" aria-label="Toggle theme" />
   }
 
   return (

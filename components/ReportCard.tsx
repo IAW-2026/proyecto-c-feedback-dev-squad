@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import type { Report } from '../types'
 import StarRating from './StarRating'
 
@@ -14,6 +14,10 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
   const [showModal, setShowModal] = useState(false)
   const [selectedAction, setSelectedAction] = useState<'dismiss' | 'remove' | null>(null)
   const [comment, setComment] = useState('')
+  const confirmRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const titleId = useId()
+  const commentId = useId()
 
   const handleOpenModal = (action: 'dismiss' | 'remove') => {
     setSelectedAction(action)
@@ -27,6 +31,31 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
     setShowModal(false)
     setSelectedAction(null)
   }
+
+  useEffect(() => {
+    if (showModal) {
+      setTimeout(() => confirmRef.current?.focus(), 50)
+    }
+  }, [showModal])
+
+  useEffect(() => {
+    if (!showModal) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setShowModal(false); return }
+      if (e.key === 'Tab') {
+        if (!confirmRef.current || !cancelRef.current) return
+        if (e.shiftKey && document.activeElement === confirmRef.current) {
+          e.preventDefault()
+          cancelRef.current.focus()
+        } else if (!e.shiftKey && document.activeElement === cancelRef.current) {
+          e.preventDefault()
+          confirmRef.current.focus()
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [showModal])
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -113,14 +142,14 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
           <button
             onClick={() => handleOpenModal('dismiss')}
             disabled={resolving}
-            className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+            className="flex-1 py-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
           >
             Desestimar reporte
           </button>
           <button
             onClick={() => handleOpenModal('remove')}
             disabled={resolving}
-            className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+            className="flex-1 py-3 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
           >
             Eliminar reseña
           </button>
@@ -128,9 +157,9 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" onClick={() => setShowModal(false)} role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <h3 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {selectedAction === 'dismiss' ? 'Desestimar reporte' : 'Eliminar reseña'}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -138,10 +167,11 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
                 ? 'El reporte se marcará como resuelto y la reseña quedará publicada.'
                 : 'La reseña se eliminará y el reporte quedará resuelto. Esta acción no se puede deshacer.'}
             </p>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor={commentId} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Comentario (opcional)
             </label>
             <textarea
+              id={commentId}
               value={comment}
               onChange={e => setComment(e.target.value)}
               rows={2}
@@ -150,17 +180,19 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
             />
             <div className="flex gap-3">
               <button
+                ref={confirmRef}
                 onClick={handleConfirm}
                 disabled={resolving}
-                className={`flex-1 py-2 rounded-lg text-white font-medium text-sm disabled:opacity-50 transition-colors ${
+                className={`flex-1 py-3 sm:py-2 rounded-lg text-white font-medium text-sm disabled:opacity-50 transition-colors ${
                   selectedAction === 'dismiss' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
                 {resolving ? 'Procesando...' : 'Confirmar'}
               </button>
               <button
+                ref={cancelRef}
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
+                className="flex-1 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
               >
                 Cancelar
               </button>

@@ -31,6 +31,13 @@ export interface Report {
 export interface CreateReviewInput {
   tipo: ReviewType
   targetId: string
+  targetName?: string
+  sellerName?: string
+  rating: number
+  comentario: string
+}
+
+export interface UpdateReviewInput {
   rating: number
   comentario: string
 }

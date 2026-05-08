@@ -89,20 +89,293 @@ Un usuario normal debe ser promovido a admin en el panel de Clerk:
 
 La Feedback App expone endpoints REST para ser consumidos por las otras apps del ecosistema ZapasYA (Buyer App, Seller App). Están disponibles en `/api/`.
 
-| Método | Endpoint                | Descripción                                             | Consumido por              |
-|:------:|-------------------------|---------------------------------------------------------|----------------------------|
-| POST   | /reviews/seller         | Crear reseña y calificación de un vendedor.            | Buyer App                  |
-| POST   | /reviews/product        | Crear reseña y calificación de un producto.            | Buyer App                  |
-| GET    | /reviews/product/{id}   | Obtener reseñas de un producto.                        | Buyer App                  |
-| GET    | /reviews/seller/{id}    | Obtener reseñas de un vendedor.                        | Seller App                 |
-| POST   | /reviews/{id}/report    | Crear un reporte sobre una reseña específica.          | Buyer App / Seller App     |
-| GET    | /stats/product/{id}     | Obtener promedio de estrellas de un producto.          | Seller App / Buyer App     |
-| GET    | /stats/seller/{id}      | Obtener promedio de estrellas y total de ventas calificadas. | Seller App / Buyer App |
+> **Nota:** Todos los endpoints usan formato JSON. Los IDs son UUIDs.
 
 ---
 
-### Nota importante
+### POST /api/reviews/seller
 
-- Todos los endpoints usan formato JSON.  
-- La comunicación entre apps es vía HTTP REST.  
-- Los IDs son únicos (UUID).  
+Crear una reseña de vendedor.
+
+**Body:**
+
+```json
+{
+  "targetId": "uuid-del-vendedor",
+  "userId": "uuid-del-comprador",
+  "rating": 4,
+  "comentario": "Buena atención, respondió rápido"
+}
+```
+
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|:-----------:|-------------|
+| targetId | string | sí | ID del vendedor a calificar |
+| userId | string | sí | ID del comprador que califica |
+| rating | number | sí | Calificación del 1 al 5 |
+| comentario | string | sí | Texto de la reseña |
+
+**Response 201:**
+
+```json
+{
+  "id": "uuid-generado",
+  "tipo": "seller",
+  "targetId": "uuid-del-vendedor",
+  "userId": "uuid-del-comprador",
+  "rating": 4,
+  "comentario": "Buena atención, respondió rápido",
+  "estado": "published",
+  "fecha": "2026-05-07T19:30:00.000Z"
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 400 | Datos inválidos (rating fuera de rango, campos faltantes) |
+| 500 | Error interno del servidor |
+
+---
+
+### POST /api/reviews/product
+
+Crear una reseña de producto.
+
+**Body:**
+
+```json
+{
+  "targetId": "uuid-del-producto",
+  "userId": "uuid-del-comprador",
+  "rating": 5,
+  "comentario": "Excelente producto, tal como se describe"
+}
+```
+
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|:-----------:|-------------|
+| targetId | string | sí | ID del producto a calificar |
+| userId | string | sí | ID del comprador que califica |
+| rating | number | sí | Calificación del 1 al 5 |
+| comentario | string | sí | Texto de la reseña |
+
+**Response 201:**
+
+```json
+{
+  "id": "uuid-generado",
+  "tipo": "product",
+  "targetId": "uuid-del-producto",
+  "userId": "uuid-del-comprador",
+  "rating": 5,
+  "comentario": "Excelente producto, tal como se describe",
+  "estado": "published",
+  "fecha": "2026-05-07T19:30:00.000Z"
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 400 | Datos inválidos (rating fuera de rango, campos faltantes) |
+| 500 | Error interno del servidor |
+
+---
+
+### GET /api/reviews/product/[id]
+
+Obtener reseñas de un producto.
+
+**Query params:**
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|:-------:|-------------|
+| page | number | 1 | Número de página |
+| limit | number | 10 | Cantidad de reseñas por página |
+| search | string | — | Búsqueda por texto en el comentario |
+
+**Response 200:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "tipo": "product",
+      "targetId": "uuid-del-producto",
+      "userId": "uuid-del-comprador",
+      "rating": 5,
+      "comentario": "Excelente producto",
+      "estado": "published",
+      "fecha": "2026-05-07T19:30:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 500 | Error interno del servidor |
+
+---
+
+### GET /api/reviews/seller/[id]
+
+Obtener reseñas de un vendedor.
+
+**Query params:**
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|:-------:|-------------|
+| page | number | 1 | Número de página |
+| limit | number | 10 | Cantidad de reseñas por página |
+| search | string | — | Búsqueda por texto en el comentario |
+
+**Response 200:**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "tipo": "seller",
+      "targetId": "uuid-del-vendedor",
+      "userId": "uuid-del-comprador",
+      "rating": 4,
+      "comentario": "Buena atención",
+      "estado": "published",
+      "fecha": "2026-05-07T19:30:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 500 | Error interno del servidor |
+
+---
+
+### POST /api/reviews/[id]/report
+
+Reportar una reseña específica.
+
+**Body:**
+
+```json
+{
+  "reporterId": "uuid-del-usuario-que-reporta",
+  "razon": "Contenido inapropiado"
+}
+```
+
+| Campo | Tipo | Obligatorio | Descripción |
+|-------|------|:-----------:|-------------|
+| reporterId | string | sí | ID del usuario que reporta |
+| razon | string | sí | Motivo del reporte |
+
+**Response 201:**
+
+```json
+{
+  "id": "uuid-generado",
+  "reviewId": "uuid-de-la-review",
+  "reporterId": "uuid-del-usuario-que-reporta",
+  "razon": "Contenido inapropiado",
+  "resuelto": false,
+  "fecha": "2026-05-07T19:30:00.000Z"
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 400 | Datos inválidos (campos faltantes) |
+| 404 | Review no encontrada |
+| 500 | Error interno del servidor |
+
+---
+
+### GET /api/stats/product/[id]
+
+Obtener estadísticas de reseñas de un producto.
+
+**Response 200:**
+
+```json
+{
+  "averageRating": 4.2,
+  "totalReviews": 15,
+  "ratingDistribution": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 5,
+    "5": 7
+  }
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 500 | Error interno del servidor |
+
+---
+
+### GET /api/stats/seller/[id]
+
+Obtener estadísticas de reseñas de un vendedor.
+
+**Response 200:**
+
+```json
+{
+  "averageRating": 4.5,
+  "totalReviews": 10,
+  "ratingDistribution": {
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 3,
+    "5": 6
+  }
+}
+```
+
+**Errores:**
+
+| Código | Descripción |
+|--------|-------------|
+| 500 | Error interno del servidor |
+
+---
+
+### Resumen de endpoints
+
+| Método | Endpoint | Descripción |
+|:------:|----------|-------------|
+| POST | /api/reviews/seller | Crear reseña de vendedor |
+| POST | /api/reviews/product | Crear reseña de producto |
+| GET | /api/reviews/product/[id] | Obtener reseñas de producto |
+| GET | /api/reviews/seller/[id] | Obtener reseñas de vendedor |
+| POST | /api/reviews/[id]/report | Reportar una reseña |
+| GET | /api/stats/product/[id] | Estadísticas de producto |
+| GET | /api/stats/seller/[id] | Estadísticas de vendedor |  

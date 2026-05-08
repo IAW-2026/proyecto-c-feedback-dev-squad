@@ -1,19 +1,28 @@
 'use client'
 
-import { useState } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
+import { useAuth, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import ReviewForm from '../../../components/ReviewForm'
 import ReviewCard from '../../../components/ReviewCard'
-import { createReview } from '../../../services/mockData'
+import { createReview, getMyReviews } from '../../actions'
 import type { CreateReviewInput, Review } from '../../../types'
 
 export default function CrearResenaPage() {
   const { userId } = useAuth()
+  const { user } = useUser()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [createdReview, setCreatedReview] = useState<Review | null>(null)
   const [error, setError] = useState('')
+  const [reviewedIds, setReviewedIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!userId) return
+    getMyReviews(userId, { page: 1, limit: 100 }).then(res => {
+      setReviewedIds(res.data.map(r => r.targetId))
+    })
+  }, [userId])
 
   const handleSubmit = async (input: CreateReviewInput) => {
     if (!userId) return
@@ -21,7 +30,7 @@ export default function CrearResenaPage() {
     setError('')
 
     try {
-      const review = await createReview(input, userId, 'Usuario')
+      const review = await createReview(input, userId, user?.fullName ?? 'Usuario')
       setCreatedReview(review)
     } catch {
       setError('Ocurrió un error al publicar la reseña.')
@@ -34,7 +43,7 @@ export default function CrearResenaPage() {
     return (
       <main className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
         <div className="max-w-2xl w-full">
-          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 text-center">
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 text-center" role="status">
             <p className="text-green-700 dark:text-green-300 font-medium">
               Reseña publicada correctamente
             </p>
@@ -71,7 +80,7 @@ export default function CrearResenaPage() {
           </p>
         )}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <ReviewForm onSubmit={handleSubmit} loading={loading} />
+          <ReviewForm onSubmit={handleSubmit} loading={loading} excludeIds={reviewedIds} />
         </div>
       </div>
     </main>

@@ -5,6 +5,7 @@ import type {
   PaginationParams,
   PaginatedResponse,
   CreateReviewInput,
+  UpdateReviewInput,
   CreateReportInput,
 } from '../types'
 
@@ -249,7 +250,8 @@ export async function createReview(input: CreateReviewInput, userId: string, use
     id: String(reviews.length + 1),
     tipo: input.tipo,
     targetId: input.targetId,
-    targetName: input.tipo === 'product' ? 'Producto #' + input.targetId : 'Vendedor #' + input.targetId,
+    targetName: input.targetName ?? (input.tipo === 'product' ? 'Producto #' + input.targetId : 'Vendedor #' + input.targetId),
+    sellerName: input.sellerName,
     userId,
     userName,
     rating: input.rating,
@@ -259,6 +261,16 @@ export async function createReview(input: CreateReviewInput, userId: string, use
   }
   reviews.unshift(newReview)
   return newReview
+}
+
+export async function updateReview(id: string, input: UpdateReviewInput): Promise<Review | null> {
+  await delay(200)
+  const review = reviews.find(r => r.id === id)
+  if (!review) return null
+  review.rating = input.rating
+  review.comentario = input.comentario
+  review.fecha = new Date().toISOString()
+  return review
 }
 
 export async function getProductStats(targetId: string): Promise<ReviewStats> {

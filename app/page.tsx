@@ -56,15 +56,15 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-3 gap-8">
             <div className="text-center">
-              <p className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">1,200+</p>
+              <p className="text-4xl md:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">1,200+</p>
               <p className="text-gray-600 dark:text-gray-300">Reseñas publicadas</p>
             </div>
             <div className="text-center">
-              <p className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</p>
+              <p className="text-4xl md:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</p>
               <p className="text-gray-600 dark:text-gray-300">Usuarios activos</p>
             </div>
             <div className="text-center">
-              <p className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">800+</p>
+              <p className="text-4xl md:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">800+</p>
               <p className="text-gray-600 dark:text-gray-300">Productos reseñados</p>
             </div>
           </div>

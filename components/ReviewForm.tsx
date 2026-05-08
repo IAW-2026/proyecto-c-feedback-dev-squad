@@ -8,9 +8,10 @@ import CustomSelect from './CustomSelect'
 interface Props {
   onSubmit: (input: CreateReviewInput) => Promise<void>
   loading?: boolean
+  excludeIds?: string[]
 }
 
-export default function ReviewForm({ onSubmit, loading }: Props) {
+export default function ReviewForm({ onSubmit, loading, excludeIds }: Props) {
   const [tipo, setTipo] = useState<ReviewType | null>(null)
   const [targetId, setTargetId] = useState('')
   const [rating, setRating] = useState(0)
@@ -18,11 +19,11 @@ export default function ReviewForm({ onSubmit, loading }: Props) {
   const [error, setError] = useState('')
 
   const mockProducts = [
-    { id: 'p1', name: 'Nike Air Max 270' },
-    { id: 'p2', name: 'Adidas Ultraboost 22' },
-    { id: 'p3', name: 'Puma RS-X' },
-    { id: 'p4', name: 'Converse Chuck Taylor' },
-    { id: 'p5', name: 'Vans Old Skool' },
+    { id: 'p1', name: 'Nike Air Max 270', sellerName: 'Sneakers Store' },
+    { id: 'p2', name: 'Adidas Ultraboost 22', sellerName: 'Zapatería Deportiva SRL' },
+    { id: 'p3', name: 'Puma RS-X', sellerName: 'Urban Kicks' },
+    { id: 'p4', name: 'Converse Chuck Taylor', sellerName: 'Sneakers Store' },
+    { id: 'p5', name: 'Vans Old Skool', sellerName: 'Zapatería Deportiva SRL' },
   ]
 
   const mockSellers = [
@@ -30,6 +31,9 @@ export default function ReviewForm({ onSubmit, loading }: Props) {
     { id: 's2', name: 'Sneakers Store' },
     { id: 's3', name: 'Urban Kicks' },
   ]
+
+  const availableProducts = mockProducts.filter(p => !excludeIds?.includes(p.id))
+  const availableSellers = mockSellers.filter(s => !excludeIds?.includes(s.id))
 
   const reset = () => {
     setTipo(null)
@@ -64,7 +68,18 @@ export default function ReviewForm({ onSubmit, loading }: Props) {
       return
     }
 
-    await onSubmit({ tipo, targetId: targetId.trim(), rating, comentario: comentario.trim() })
+    const selectedTarget = tipo === 'product'
+      ? mockProducts.find(p => p.id === targetId)
+      : mockSellers.find(s => s.id === targetId)
+
+    await onSubmit({
+      tipo,
+      targetId: targetId.trim(),
+      targetName: selectedTarget?.name,
+      sellerName: tipo === 'product' ? (selectedTarget as { sellerName?: string })?.sellerName : undefined,
+      rating,
+      comentario: comentario.trim(),
+    })
   }
 
   if (!tipo) {
@@ -73,7 +88,7 @@ export default function ReviewForm({ onSubmit, loading }: Props) {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           ¿Qué deseas reseñar?
         </h2>
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
           <button
             onClick={() => setTipo('product')}
             className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-lg"
@@ -101,13 +116,19 @@ export default function ReviewForm({ onSubmit, loading }: Props) {
         &larr; Cambiar tipo de reseña
       </button>
 
-      <CustomSelect
-        label={tipo === 'product' ? 'Producto' : 'Vendedor'}
-        options={tipo === 'product' ? mockProducts : mockSellers}
-        value={targetId}
-        onChange={setTargetId}
-        placeholder={tipo === 'product' ? 'Seleccionar producto...' : 'Seleccionar vendedor...'}
-      />
+      {(tipo === 'product' ? availableProducts : availableSellers).length === 0 ? (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          Ya reseñaste todos los {tipo === 'product' ? 'productos' : 'vendedores'} disponibles.
+        </div>
+      ) : (
+        <CustomSelect
+          label={tipo === 'product' ? 'Producto' : 'Vendedor'}
+          options={tipo === 'product' ? availableProducts : availableSellers}
+          value={targetId}
+          onChange={setTargetId}
+          placeholder={tipo === 'product' ? 'Seleccionar producto...' : 'Seleccionar vendedor...'}
+        />
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
