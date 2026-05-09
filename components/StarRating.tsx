@@ -46,7 +46,7 @@ export default function StarRating({ rating, onChange, size = 'md' }: Props) {
           aria-checked={onChange ? starValue <= rating : undefined}
           className={`${star} ${onChange ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
         >
-          <svg viewBox="0 0 24 24" fill={starValue <= displayRating ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" className={starValue <= displayRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}>
+          <svg viewBox="0 0 24 24" fill={starValue <= displayRating ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" className={starValue <= displayRating ? 'text-yellow-400' : 'text-gray-400 dark:text-gray-600'}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
           </svg>
         </button>

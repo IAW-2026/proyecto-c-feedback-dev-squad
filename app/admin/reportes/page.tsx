@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { getReports, resolveReport } from '../../actions'
 import ReportCard from '../../../components/ReportCard'
 import SearchBar from '../../../components/SearchBar'
@@ -12,67 +12,66 @@ import type { Report, PaginatedResponse } from '../../../types'
 type ResolvedFilter = 'all' | 'pending' | 'resolved'
 
 export default function ReportesPage() {
-  return (
-    <Suspense fallback={<div className="min-h-[calc(100vh-8rem)] flex items-center justify-center text-gray-500 dark:text-gray-400">Cargando...</div>}>
-      <ReportesContent />
-    </Suspense>
-  )
-}
-
-function ReportesContent() {
   const { user } = useUser()
-  const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
-
-  const page = Number(searchParams.get('page')) || 1
-  const search = searchParams.get('search') || ''
-  const resolvedFilter = (searchParams.get('estado') as ResolvedFilter) || 'pending'
 
   const [data, setData] = useState<PaginatedResponse<Report>>({ data: [], total: 0, page: 1, limit: 5, totalPages: 0 })
   const [loading, setLoading] = useState(true)
   const [resolving, setResolving] = useState<string | null>(null)
   const [error, setError] = useState('')
 
-  const updateParams = (updates: Record<string, string | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === '' || value === 'all') {
-        params.delete(key)
-      } else {
-        params.set(key, value)
-      }
-    })
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-  }
-
-  const fetchReports = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const result = await getReports({ page, limit: 5, search })
-      let filtered = result.data
-      if (resolvedFilter === 'pending') {
-        filtered = filtered.filter(r => !r.resuelto)
-      } else if (resolvedFilter === 'resolved') {
-        filtered = filtered.filter(r => r.resuelto)
-      }
-      setData({
-        ...result,
-        data: filtered,
-        total: filtered.length,
-        totalPages: Math.ceil(filtered.length / 5),
-      })
-    } catch {
-      setError('Error al cargar los reportes.')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, search, resolvedFilter])
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [resolvedFilter, setResolvedFilter] = useState<ResolvedFilter>('all')
 
   useEffect(() => {
+    const syncFromUrl = () => {
+      const sp = new URLSearchParams(window.location.search)
+      setPage(Number(sp.get('page')) || 1)
+      setSearch(sp.get('search') || '')
+      setResolvedFilter((sp.get('estado') as ResolvedFilter) || 'all')
+    }
+    syncFromUrl()
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
+  }, [])
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const resolvedParam = resolvedFilter === 'all' ? undefined : resolvedFilter === 'resolved'
+        const result = await getReports({ page, limit: 5, search, resolved: resolvedParam })
+        setData(result)
+      } catch {
+        setError('Error al cargar los reportes.')
+      } finally {
+        setLoading(false)
+      }
+    }
     fetchReports()
-  }, [fetchReports])
+  }, [page, search, resolvedFilter])
+
+  const syncUrl = (p: number, s: string, rf: ResolvedFilter) => {
+    const params = new URLSearchParams()
+    params.set('page', String(p))
+    if (s) params.set('search', s)
+    if (rf !== 'all') params.set('estado', rf)
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
+
+  const updateParams = (updates: Record<string, string | undefined>) => {
+    const newPage = 'page' in updates ? Number(updates.page) || 1 : page
+    const newSearch = 'search' in updates ? (updates.search ?? '') : search
+    const newFilter = 'estado' in updates ? ((updates.estado as ResolvedFilter) || 'all') : resolvedFilter
+    setPage(newPage)
+    setSearch(newSearch)
+    setResolvedFilter(newFilter)
+    syncUrl(newPage, newSearch, newFilter)
+  }
 
   const handleResolve = async (reportId: string, action: 'dismiss' | 'remove', comment?: string) => {
     if (!user) return
@@ -83,7 +82,9 @@ function ReportesContent() {
         adminComment: comment,
         action,
       })
-      await fetchReports()
+      const resolvedParam = resolvedFilter === 'all' ? undefined : resolvedFilter === 'resolved'
+      const result = await getReports({ page, limit: 5, search, resolved: resolvedParam })
+      setData(result)
     } catch {
       setError('Error al resolver el reporte.')
     } finally {
@@ -109,6 +110,7 @@ function ReportesContent() {
             <SearchBar
               onSearch={q => updateParams({ search: q || undefined, page: '1' })}
               placeholder="Buscar en reportes..."
+              defaultValue={search}
             />
           </div>
           <div className="flex gap-2">
@@ -171,7 +173,7 @@ function ReportesContent() {
                 />
               ))}
             </div>
-            <Pagination page={data.page} totalPages={data.totalPages} onPageChange={p => updateParams({ page: String(p) })} />
+            <Pagination page={page} totalPages={data.totalPages} onPageChange={p => updateParams({ page: String(p) })} />
           </>
         )}
       </div>
