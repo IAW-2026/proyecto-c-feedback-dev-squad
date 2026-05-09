@@ -32,8 +32,8 @@ export default function ReviewForm({ onSubmit, loading, excludeIds }: Props) {
     { id: 's3', name: 'Urban Kicks' },
   ]
 
-  const availableProducts = mockProducts.filter(p => !excludeIds?.includes(p.id))
-  const availableSellers = mockSellers.filter(s => !excludeIds?.includes(s.id))
+  const availableProducts = mockProducts.filter(p => !excludeIds?.includes(`product:${p.id}`))
+  const availableSellers = mockSellers.filter(s => !excludeIds?.includes(`seller:${s.id}`))
 
   const reset = () => {
     setTipo(null)

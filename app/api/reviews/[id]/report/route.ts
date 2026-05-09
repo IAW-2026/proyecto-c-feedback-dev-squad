@@ -16,6 +16,12 @@ export async function POST(
     if (!review) {
       return NextResponse.json({ error: 'Review no encontrada' }, { status: 404 })
     }
+    if (review.estado === 'removed') {
+      return NextResponse.json({ error: 'No se puede reportar una reseña eliminada' }, { status: 400 })
+    }
+    if (review.estado === 'reported') {
+      return NextResponse.json({ error: 'Esta reseña ya fue reportada' }, { status: 409 })
+    }
 
     const body = await req.json()
     const { razon, reporterId, reporterName } = body

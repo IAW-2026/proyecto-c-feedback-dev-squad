@@ -19,6 +19,21 @@ export async function POST(req: NextRequest) {
     if (!comentario || typeof comentario !== 'string' || comentario.trim().length < 10) {
       return NextResponse.json({ error: 'comentario debe tener al menos 10 caracteres' }, { status: 400 })
     }
+    if (comentario.length > 500) {
+      return NextResponse.json({ error: 'comentario no puede superar los 500 caracteres' }, { status: 400 })
+    }
+
+    const existing = await prisma.review.findFirst({
+      where: {
+        userId,
+        tipo: 'seller',
+        targetId,
+        estado: { in: ['published', 'reported'] },
+      },
+    })
+    if (existing) {
+      return NextResponse.json({ error: 'Ya existe una reseña activa para este vendedor' }, { status: 409 })
+    }
 
     const review = await prisma.review.create({
       data: {

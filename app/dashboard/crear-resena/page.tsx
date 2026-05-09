@@ -20,7 +20,10 @@ export default function CrearResenaPage() {
   useEffect(() => {
     if (!userId) return
     getMyReviews(userId, { page: 1, limit: 100 }).then(res => {
-      setReviewedIds(res.data.map(r => r.targetId))
+      const activeIds = res.data
+        .filter(r => r.estado === 'published' || r.estado === 'reported')
+        .map(r => `${r.tipo}:${r.targetId}`)
+      setReviewedIds(activeIds)
     })
   }, [userId])
 
