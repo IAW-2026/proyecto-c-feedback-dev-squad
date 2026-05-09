@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
+  --background: #f3f4f6;
   --foreground: #171717;
-  --color-background: #ffffff;
+  --color-background: #f3f4f6;
   --color-foreground: #171717;
   --color-primary: #000000;
   --color-on-primary: #ffffff;
@@ -22,9 +22,9 @@
   --color-info: #2563eb;
   --color-info-dark: #1d4ed8;
   --color-info-light: #dbeafe;
-  --color-muted: #6b7280;
+  --color-muted: #4b5563;
   --color-muted-light: #f3f4f6;
-  --color-border: #d1d5db;
+  --color-border: #9ca3af;
   --color-surface: #ffffff;
   --color-surface-alt: #f8fafc;
 }
@@ -40,7 +40,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 transition-colors duration-200;
+    @apply bg-gray-100 text-gray-900 transition-colors duration-200;
   }
 
   .dark body {

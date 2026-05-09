@@ -53,7 +53,7 @@ export default function ReviewCard({ review, editable, onUpdate, onDelete }: Pro
   }
 
   return (
-    <article className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all hover:shadow-md">
+    <article className="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-300 dark:border-gray-700 p-6 transition-all hover:shadow-md">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -98,9 +98,9 @@ export default function ReviewCard({ review, editable, onUpdate, onDelete }: Pro
             </label>
             <div className="flex items-center gap-2">
               <StarRating rating={editRating} onChange={setEditRating} size="md" />
-              <span className="text-sm text-gray-400 dark:text-gray-500">
-                ({editRating}/5)
-              </span>
+          <span className="text-sm text-gray-500 dark:text-gray-500">
+            ({editRating}/5)
+          </span>
             </div>
           </div>
 
@@ -157,7 +157,7 @@ export default function ReviewCard({ review, editable, onUpdate, onDelete }: Pro
         <>
           <div className="flex items-center gap-2 mb-2">
             <StarRating rating={review.rating} size="sm" />
-            <span className="text-sm text-gray-400 dark:text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-500">
               ({review.rating}/5)
             </span>
           </div>

@@ -97,10 +97,10 @@ export default function CustomSelect({ label, options, value, onChange, placehol
           aria-labelledby={labelId}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          className={`w-full flex items-center justify-between px-4 py-3 sm:py-2.5 border rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors cursor-pointer text-left ${
+          className={`w-full flex items-center justify-between px-4 py-3 sm:py-2.5 border rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors cursor-pointer text-left ${
             value
-              ? 'text-gray-900 dark:text-white border-gray-300 dark:border-gray-600'
-              : 'text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600'
+              ? 'text-gray-900 dark:text-white border-gray-400 dark:border-gray-600'
+              : 'text-gray-500 dark:text-gray-500 border-gray-400 dark:border-gray-600'
           }`}
         >
           <span>{value ? selectedOption?.name : placeholder}</span>

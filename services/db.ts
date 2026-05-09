@@ -10,6 +10,15 @@ import type {
   CreateReportInput,
 } from '../types'
 
+const MAX_COMENTARIO_LENGTH = 500
+
+function sanitizePagination(page: number, limit: number): { page: number; limit: number } {
+  return {
+    page: Math.max(1, Math.floor(page)),
+    limit: Math.min(100, Math.max(1, Math.floor(limit))),
+  }
+}
+
 interface ResolveOptions {
   adminName: string
   adminComment?: string
@@ -17,6 +26,7 @@ interface ResolveOptions {
 }
 
 export async function getReviews(params: PaginationParams): Promise<PaginatedResponse<Review>> {
+  const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = {}
 
   if (params.search) {
@@ -36,8 +46,8 @@ export async function getReviews(params: PaginationParams): Promise<PaginatedRes
     prisma.review.findMany({
       where,
       orderBy: { fecha: 'desc' },
-      skip: (params.page - 1) * params.limit,
-      take: params.limit,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.review.count({ where }),
   ])
@@ -45,9 +55,9 @@ export async function getReviews(params: PaginationParams): Promise<PaginatedRes
   return {
     data: data as unknown as Review[],
     total,
-    page: params.page,
-    limit: params.limit,
-    totalPages: Math.ceil(total / params.limit),
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
   }
 }
 
@@ -60,6 +70,7 @@ export async function getMyReviews(
   userId: string,
   params: PaginationParams,
 ): Promise<PaginatedResponse<Review>> {
+  const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = { userId }
 
   if (params.search) {
@@ -78,8 +89,8 @@ export async function getMyReviews(
     prisma.review.findMany({
       where,
       orderBy: { fecha: 'desc' },
-      skip: (params.page - 1) * params.limit,
-      take: params.limit,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.review.count({ where }),
   ])
@@ -87,9 +98,9 @@ export async function getMyReviews(
   return {
     data: data as unknown as Review[],
     total,
-    page: params.page,
-    limit: params.limit,
-    totalPages: Math.ceil(total / params.limit),
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
   }
 }
 
@@ -98,6 +109,7 @@ export async function getTargetReviews(
   tipo: 'product' | 'seller',
   params: PaginationParams,
 ): Promise<PaginatedResponse<Review>> {
+  const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = { targetId, tipo, estado: 'published' }
 
   if (params.search) {
@@ -112,8 +124,8 @@ export async function getTargetReviews(
     prisma.review.findMany({
       where,
       orderBy: { fecha: 'desc' },
-      skip: (params.page - 1) * params.limit,
-      take: params.limit,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.review.count({ where }),
   ])
@@ -121,9 +133,9 @@ export async function getTargetReviews(
   return {
     data: data as unknown as Review[],
     total,
-    page: params.page,
-    limit: params.limit,
-    totalPages: Math.ceil(total / params.limit),
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
   }
 }
 
@@ -144,8 +156,23 @@ export async function createReview(
   if (!input.comentario || input.comentario.trim().length < 10) {
     throw new Error('comentario debe tener al menos 10 caracteres')
   }
+  if (input.comentario.length > MAX_COMENTARIO_LENGTH) {
+    throw new Error(`comentario no puede superar los ${MAX_COMENTARIO_LENGTH} caracteres`)
+  }
   if (!userId) {
     throw new Error('userId es requerido')
+  }
+
+  const existing = await prisma.review.findFirst({
+    where: {
+      userId,
+      tipo: input.tipo,
+      targetId: input.targetId,
+      estado: { in: ['published', 'reported'] },
+    },
+  })
+  if (existing) {
+    throw new Error('Ya existe una reseña activa para este producto/vendedor')
   }
 
   const review = await prisma.review.create({
@@ -164,12 +191,20 @@ export async function createReview(
   return review as unknown as Review
 }
 
-export async function updateReview(id: string, input: UpdateReviewInput): Promise<Review | null> {
+export async function updateReview(id: string, input: UpdateReviewInput, userId: string): Promise<Review | null> {
+  const existing = await prisma.review.findUnique({ where: { id } })
+  if (!existing) throw new Error('Reseña no encontrada')
+  if (existing.userId !== userId) throw new Error('No autorizado')
+  if (existing.estado !== 'published') throw new Error('No se puede modificar una reseña reportada o eliminada')
+
   if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
     throw new Error('rating debe ser un número entero entre 1 y 5')
   }
   if (!input.comentario || input.comentario.trim().length < 10) {
     throw new Error('comentario debe tener al menos 10 caracteres')
+  }
+  if (input.comentario.length > MAX_COMENTARIO_LENGTH) {
+    throw new Error(`comentario no puede superar los ${MAX_COMENTARIO_LENGTH} caracteres`)
   }
 
   const review = await prisma.review.update({
@@ -183,7 +218,12 @@ export async function updateReview(id: string, input: UpdateReviewInput): Promis
   return review as unknown as Review
 }
 
-export async function deleteReview(id: string): Promise<Review | null> {
+export async function deleteReview(id: string, userId: string): Promise<Review | null> {
+  const existing = await prisma.review.findUnique({ where: { id } })
+  if (!existing) throw new Error('Reseña no encontrada')
+  if (existing.userId !== userId) throw new Error('No autorizado')
+  if (existing.estado !== 'published') throw new Error('No se puede eliminar una reseña reportada o eliminada')
+
   const review = await prisma.review.update({
     where: { id },
     data: { estado: 'removed' },
@@ -254,6 +294,7 @@ export async function getSellerStats(targetId: string): Promise<ReviewStats> {
 }
 
 export async function getReports(params: PaginationParams): Promise<PaginatedResponse<Report>> {
+  const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = {}
 
   if (params.search) {
@@ -274,8 +315,8 @@ export async function getReports(params: PaginationParams): Promise<PaginatedRes
       where,
       include: { review: true },
       orderBy: { fecha: 'desc' },
-      skip: (params.page - 1) * params.limit,
-      take: params.limit,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.report.count({ where }),
   ])
@@ -283,9 +324,9 @@ export async function getReports(params: PaginationParams): Promise<PaginatedRes
   return {
     data: data as unknown as Report[],
     total,
-    page: params.page,
-    limit: params.limit,
-    totalPages: Math.ceil(total / params.limit),
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
   }
 }
 
@@ -307,6 +348,12 @@ export async function createReport(
   const review = await prisma.review.findUnique({ where: { id: input.reviewId } })
   if (!review) {
     throw new Error('Review no encontrada')
+  }
+  if (review.estado === 'removed') {
+    throw new Error('No se puede reportar una reseña eliminada')
+  }
+  if (review.estado === 'reported') {
+    throw new Error('Esta reseña ya fue reportada')
   }
 
   const [report] = await Promise.all([
@@ -346,7 +393,7 @@ export async function resolveReport(
   const updateData: Record<string, unknown> = {
     resuelto: true,
     resolvedBy: options.adminName,
-    adminComment: options.adminComment ?? '',
+    adminComment: options.adminComment ?? null,
   }
 
   if (options.action === 'remove') {
@@ -358,7 +405,13 @@ export async function resolveReport(
       }),
     ])
   } else {
-    await prisma.report.update({ where: { id }, data: updateData })
+    await Promise.all([
+      prisma.report.update({ where: { id }, data: updateData }),
+      prisma.review.update({
+        where: { id: report.reviewId },
+        data: { estado: 'published' },
+      }),
+    ])
   }
 
   const updated = await prisma.report.findUnique({
