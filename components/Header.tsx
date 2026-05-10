@@ -74,14 +74,22 @@ export default function Header() {
     <>
       <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 md:h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400">
-                Feedback App
+          <div className="grid grid-cols-3 items-center h-14 md:h-16">
+            <div className="col-start-1 flex items-center">
+              <Link href="/" className="flex items-center gap-2">
+                <img src="/icon.png" alt="ZapasYA" className="w-6 h-6 md:w-8 md:h-8 shrink-0" />
+                <span className="md:hidden text-base font-bold leading-none text-blue-600 dark:text-blue-400">Feedback</span>
+                <div className="hidden md:flex md:flex-col">
+                  <div className="flex items-baseline">
+                    <span className="text-base font-bold leading-none text-gray-900 dark:text-white">Zapas</span>
+                    <span className="text-base font-bold leading-none text-blue-600 dark:text-blue-400">YA Feedback</span>
+                  </div>
+                  <span className="text-[8px] tracking-[0.15em] text-gray-500 dark:text-gray-400 leading-none">MARKETPLACE DE ZAPATILLAS</span>
+                </div>
               </Link>
             </div>
 
-             <nav className="hidden md:flex items-center space-x-8">
+             <nav className="col-start-2 hidden md:flex items-center justify-center space-x-8 md:ml-6">
                <Link href="/" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
                  Inicio
                </Link>
@@ -130,7 +138,7 @@ export default function Header() {
                </div>
              </nav>
 
-             <div className="flex items-center space-x-4">
+             <div className="col-start-3 flex items-center justify-end space-x-4">
                <ThemeToggle />
 
                <div className="flex items-center min-w-[48px] justify-center">
