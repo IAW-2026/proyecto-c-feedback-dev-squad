@@ -3,21 +3,29 @@ import type { Report } from '../types'
 
 const API_KEY = process.env.GEMINI_API_KEY
 
-async function queryGemini(prompt: string): Promise<string | null> {
-  if (!API_KEY) return null
+async function queryGemini(prompt: string): Promise<string> {
+  if (!API_KEY) {
+    throw new Error('GEMINI_API_KEY no está definida en el entorno')
+  }
+
   try {
     const genAI = new GoogleGenerativeAI(API_KEY)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const result = await model.generateContent(prompt)
     const text = result.response.text()
-    return text.trim() || null
-  } catch {
-    return null
+    const trimmed = text.trim()
+    if (!trimmed) {
+      throw new Error('La respuesta de Gemini vino vacía')
+    }
+    return trimmed
+  } catch (error) {
+    if (error instanceof Error) throw error
+    throw new Error('Error desconocido al consultar Gemini')
   }
 }
 
 export async function getAIOpinion(report: Report): Promise<string> {
-  const prompt = `Analizá el siguiente reporte de una reseña y dame tu opinión en español.
+  const prompt = `Analizá el siguiente reporte de una reseña y dame tu opinión en español en no más de 2 frases.
 
 Motivo del reporte: "${report.razon}"
 Autor de la reseña: ${report.review?.userName ?? 'Anónimo'}
