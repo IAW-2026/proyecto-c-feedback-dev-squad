@@ -8,8 +8,8 @@ import Toast from '../components/Toast'
 import Footer from '../components/Footer'
 
 export const metadata: Metadata = {
-  title: 'Feedback App',
-  description: 'Aplicación de feedback para el marketplace',
+  title: 'ZapasYA Feedback App',
+  description: 'Plataforma de reseñas para compra y venta de zapatos',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Suspense fallback={null}>
               <Toast />
             </Suspense>
-            <main className="flex-1">
+            <main className="flex-1 flex flex-col">
               {children}
             </main>
             <Footer />
