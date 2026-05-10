@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { Report } from '../types'
 
-const API_KEY = process.env.GEMINI_API_KEY ?? process.env.HUGGINGFACE_API_KEY
+const API_KEY = process.env.GEMINI_API_KEY
 
 async function queryGemini(prompt: string): Promise<string | null> {
   if (!API_KEY) return null
@@ -11,26 +11,6 @@ async function queryGemini(prompt: string): Promise<string | null> {
     const result = await model.generateContent(prompt)
     const text = result.response.text()
     return text.trim() || null
-  } catch {
-    return null
-  }
-}
-
-async function queryHuggingFace(prompt: string): Promise<string | null> {
-  try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (API_KEY) headers['Authorization'] = `Bearer ${API_KEY}`
-    const res = await fetch(
-      'https://api-inference.huggingface.co/models/google/flan-t5-small',
-      {
-        headers,
-        method: 'POST',
-        body: JSON.stringify({ inputs: prompt, parameters: { max_new_tokens: 250, temperature: 0.3 } }),
-      },
-    )
-    if (!res.ok) return null
-    const json = await res.json()
-    return (json[0]?.generated_text ?? '').trim()
   } catch {
     return null
   }
@@ -49,9 +29,6 @@ Opinión:`
 
   const geminiResult = await queryGemini(prompt)
   if (geminiResult) return geminiResult
-
-  const hfResult = await queryHuggingFace(prompt)
-  if (hfResult) return hfResult
 
   return 'La opinión de IA no está disponible en este momento. Intentalo de nuevo más tarde.'
 }
@@ -72,9 +49,6 @@ Resumen:`
 
   const geminiResult = await queryGemini(prompt)
   if (geminiResult) return geminiResult
-
-  const hfResult = await queryHuggingFace(prompt)
-  if (hfResult) return hfResult
 
   return 'No se pudo generar un resumen en este momento.'
 }
