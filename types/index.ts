@@ -1,6 +1,26 @@
 export type ReviewType = 'product' | 'seller'
 export type ReviewStatus = 'published' | 'reported' | 'removed'
 
+export interface Usuario {
+  id: string
+  nombre: string
+  email?: string
+  role: string
+  fotoUrl?: string
+}
+
+export interface Producto {
+  id: string
+  nombre: string
+  vendedorId?: string
+  sellerName?: string
+}
+
+export interface Vendedor {
+  id: string
+  nombre: string
+}
+
 export interface Review {
   id: string
   tipo: ReviewType
@@ -17,7 +37,7 @@ export interface Review {
 
 export interface Report {
   id: string
-  reviewId: string
+  reseñaId: string
   reporterId: string
   razon: string
   resuelto: boolean
@@ -31,8 +51,6 @@ export interface Report {
 export interface CreateReviewInput {
   tipo: ReviewType
   targetId: string
-  targetName?: string
-  sellerName?: string
   rating: number
   comentario: string
 }
@@ -43,7 +61,7 @@ export interface UpdateReviewInput {
 }
 
 export interface CreateReportInput {
-  reviewId: string
+  reseñaId: string
   razon: string
 }
 
@@ -68,5 +86,3 @@ export interface PaginatedResponse<T> {
   limit: number
   totalPages: number
 }
-
-
