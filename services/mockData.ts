@@ -147,7 +147,7 @@ const reviews: Review[] = [
 const reports: Report[] = [
   {
     id: 'r1',
-    reviewId: '4',
+    reseñaId: '4',
     reporterId: 'u3',
     reporterName: 'Juan García',
     razon: 'Contenido falso, el usuario nunca compró el producto.',
@@ -157,7 +157,7 @@ const reports: Report[] = [
   },
   {
     id: 'r2',
-    reviewId: '10',
+    reseñaId: '10',
     reporterId: 'u10',
     reporterName: 'Admin',
     razon: 'Lenguaje inapropiado en la reseña.',
@@ -167,7 +167,7 @@ const reports: Report[] = [
   },
   {
     id: 'r3',
-    reviewId: '1',
+    reseñaId: '1',
     reporterId: 'u11',
     reporterName: 'Laura Ruiz',
     razon: 'La reseña parece ser un review falso (muy positivo, poca credibilidad).',
@@ -250,8 +250,7 @@ export async function createReview(input: CreateReviewInput, userId: string, use
     id: String(reviews.length + 1),
     tipo: input.tipo,
     targetId: input.targetId,
-    targetName: input.targetName ?? (input.tipo === 'product' ? 'Producto #' + input.targetId : 'Vendedor #' + input.targetId),
-    sellerName: input.sellerName,
+    targetName: input.tipo === 'product' ? 'Producto #' + input.targetId : 'Vendedor #' + input.targetId,
     userId,
     userName,
     rating: input.rating,
@@ -328,10 +327,10 @@ export async function getReports(params: PaginationParams): Promise<PaginatedRes
 
 export async function createReport(input: CreateReportInput, reporterId: string, reporterName: string): Promise<Report> {
   await delay(300)
-  const review = reviews.find(r => r.id === input.reviewId) ?? null
+  const review = reviews.find(r => r.id === input.reseñaId) ?? null
   const newReport: Report = {
     id: 'r' + String(reports.length + 1),
-    reviewId: input.reviewId,
+    reseñaId: input.reseñaId,
     reporterId,
     reporterName,
     razon: input.razon,

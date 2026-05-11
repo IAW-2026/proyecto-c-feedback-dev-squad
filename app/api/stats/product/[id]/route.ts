@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProductStats } from '../../../../../services/db'
+import { validateApiKey } from '../../../../../lib/validateApiKey'
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // TODO: agregar validateApiKey() cuando se defina con el equipo
+  if (!validateApiKey(req)) {
+    return NextResponse.json({ error: 'API key inválida o faltante' }, { status: 401 })
+  }
   try {
     const { id: targetId } = await params
     if (!targetId) {

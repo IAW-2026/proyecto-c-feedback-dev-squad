@@ -1,6 +1,8 @@
 'use server'
 
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { isAdmin } from '../services/db'
+import { ensureUser } from '../lib/ensureUser'
 import type {
   Review,
   Report,
@@ -58,14 +60,14 @@ export async function deleteReview(id: string): Promise<Review | null> {
 export async function getReports(
   params: PaginationParams & { resolved?: boolean },
 ): Promise<PaginatedResponse<Report>> {
-  const user = await currentUser()
-  const role = user?.publicMetadata?.role as string | undefined
-  if (role !== 'admin') throw new Error('No autorizado')
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+  const admin = await isAdmin(userId)
+  if (!admin) throw new Error('No autorizado')
   return dbGetReports(params)
 }
 
 interface ResolveOptions {
-  adminName: string
   adminComment?: string
   action: 'dismiss' | 'remove'
 }
@@ -74,14 +76,25 @@ export async function resolveReport(
   id: string,
   options: ResolveOptions,
 ): Promise<Report | null> {
-  const user = await currentUser()
-  const role = user?.publicMetadata?.role as string | undefined
-  if (role !== 'admin') throw new Error('No autorizado')
-  return dbResolveReport(id, options)
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+  const admin = await isAdmin(userId)
+  if (!admin) throw new Error('No autorizado')
+  return dbResolveReport(id, { adminId: userId, adminComment: options.adminComment, action: options.action })
 }
 
 export async function getAIOpinionAction(reportId: string): Promise<string> {
   const report = await dbGetReportById(reportId)
   if (!report) throw new Error('Reporte no encontrado')
   return getAIOpinion(report)
+}
+
+export async function ensureUserAction(): Promise<void> {
+  const clerkUser = await currentUser()
+  if (!clerkUser) return
+  await ensureUser(
+    clerkUser.id,
+    `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() || 'Usuario',
+    clerkUser.emailAddresses?.[0]?.emailAddress,
+  )
 }

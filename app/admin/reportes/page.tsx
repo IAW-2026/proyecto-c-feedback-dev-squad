@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
 import { useRouter, usePathname } from 'next/navigation'
 import { getReports, resolveReport } from '../../actions'
 import ReportCard from '../../../components/ReportCard'
@@ -12,7 +11,6 @@ import type { Report, PaginatedResponse } from '../../../types'
 type ResolvedFilter = 'all' | 'pending' | 'resolved'
 
 export default function ReportesPage() {
-  const { user } = useUser()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -74,11 +72,9 @@ export default function ReportesPage() {
   }
 
   const handleResolve = async (reportId: string, action: 'dismiss' | 'remove', comment?: string) => {
-    if (!user) return
     setResolving(reportId)
     try {
       await resolveReport(reportId, {
-        adminName: user.fullName ?? 'Admin',
         adminComment: comment,
         action,
       })

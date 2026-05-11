@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma'
+import { ensureUser } from '../lib/ensureUser'
 import type {
   Review,
   Report,
@@ -10,7 +11,8 @@ import type {
   CreateReportInput,
 } from '../types'
 
-const MAX_COMENTARIO_LENGTH = 500
+const MAX_COMENTARIO_LENGTH = 100
+const MAX_ADMIN_COMMENT_LENGTH = 500
 
 function sanitizePagination(page: number, limit: number): { page: number; limit: number } {
   return {
@@ -20,9 +22,90 @@ function sanitizePagination(page: number, limit: number): { page: number; limit:
 }
 
 interface ResolveOptions {
-  adminName: string
+  adminId: string
   adminComment?: string
   action: 'dismiss' | 'remove'
+}
+
+export async function resolveTargetName(tipo: string, targetId: string): Promise<{ targetName: string; sellerName?: string }> {
+  if (tipo === 'product') {
+    const product = await prisma.producto.findUnique({
+      where: { id: targetId },
+      include: { vendedor: true },
+    })
+    if (!product) return { targetName: 'Producto' }
+    return { targetName: product.nombre, sellerName: product.vendedor?.nombre }
+  }
+  if (tipo === 'seller') {
+    const seller = await prisma.vendedor.findUnique({ where: { id: targetId } })
+    return { targetName: seller?.nombre ?? 'Vendedor' }
+  }
+  return { targetName: 'Desconocido' }
+}
+
+async function resolveTargetNames(
+  items: { tipo: string; targetId: string }[],
+): Promise<Map<string, { targetName: string; sellerName?: string }>> {
+  const productIds = [...new Set(items.filter(r => r.tipo === 'product').map(r => r.targetId))]
+  const sellerIds = [...new Set(items.filter(r => r.tipo === 'seller').map(r => r.targetId))]
+
+  const [products, sellers] = await Promise.all([
+    prisma.producto.findMany({
+      where: { id: { in: productIds } },
+      include: { vendedor: true },
+    }),
+    prisma.vendedor.findMany({ where: { id: { in: sellerIds } } }),
+  ])
+
+  const productMap = new Map(products.map(p => [p.id, p]))
+  const sellerMap = new Map(sellers.map(s => [s.id, s]))
+  const result = new Map<string, { targetName: string; sellerName?: string }>()
+
+  for (const item of items) {
+    if (result.has(`${item.tipo}:${item.targetId}`)) continue
+    if (item.tipo === 'product') {
+      const p = productMap.get(item.targetId)
+      result.set(`${item.tipo}:${item.targetId}`, {
+        targetName: p?.nombre ?? 'Producto',
+        sellerName: p?.vendedor?.nombre,
+      })
+    } else {
+      const s = sellerMap.get(item.targetId)
+      result.set(`${item.tipo}:${item.targetId}`, {
+        targetName: s?.nombre ?? 'Vendedor',
+      })
+    }
+  }
+  return result
+}
+
+function mapReview(r: any): Review {
+  return {
+    id: r.id,
+    tipo: r.tipo as Review['tipo'],
+    targetId: r.targetId,
+    userId: r.userId,
+    rating: r.rating,
+    comentario: r.comentario,
+    estado: r.estado as Review['estado'],
+    fecha: r.fecha,
+    userName: r.usuario?.nombre,
+  }
+}
+
+function mapReport(r: any): Report {
+  return {
+    id: r.id,
+    reseñaId: r.reseñaId,
+    reporterId: r.reporterId,
+    razon: r.razon,
+    resuelto: r.resuelto,
+    fecha: r.fecha,
+    review: r.reseña ? mapReview({ ...r.reseña, usuario: r.reseña.usuario }) : undefined,
+    reporterName: r.reportero?.nombre,
+    resolvedBy: r.resolvedor?.nombre,
+    adminComment: r.adminComment ?? undefined,
+  }
 }
 
 export async function getReviews(params: PaginationParams): Promise<PaginatedResponse<Review>> {
@@ -33,8 +116,7 @@ export async function getReviews(params: PaginationParams): Promise<PaginatedRes
     const q = params.search
     where.OR = [
       { comentario: { contains: q, mode: 'insensitive' } },
-      { targetName: { contains: q, mode: 'insensitive' } },
-      { userName: { contains: q, mode: 'insensitive' } },
+      { usuario: { nombre: { contains: q, mode: 'insensitive' } } },
     ]
   }
 
@@ -43,33 +125,44 @@ export async function getReviews(params: PaginationParams): Promise<PaginatedRes
   }
 
   const [data, total] = await Promise.all([
-    prisma.review.findMany({
+    prisma.reseña.findMany({
       where,
+      include: { usuario: true },
       orderBy: { fecha: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.review.count({ where }),
+    prisma.reseña.count({ where }),
   ])
 
-  return {
-    data: data as unknown as Review[],
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
+  const reviews = data.map(r => mapReview(r))
+  const targetMap = await resolveTargetNames(reviews)
+  for (const review of reviews) {
+    const resolved = targetMap.get(`${review.tipo}:${review.targetId}`)
+    if (resolved) {
+      review.targetName = resolved.targetName
+      review.sellerName = resolved.sellerName
+    }
   }
+
+  return { data: reviews, total, page, limit, totalPages: Math.ceil(total / limit) }
 }
 
 export async function getReviewById(id: string): Promise<Review | null> {
-  const review = await prisma.review.findUnique({ where: { id } })
-  return review as unknown as Review | null
+  const review = await prisma.reseña.findUnique({
+    where: { id },
+    include: { usuario: true },
+  })
+  if (!review) return null
+
+  const mapped = mapReview(review)
+  const resolved = await resolveTargetName(mapped.tipo, mapped.targetId)
+  mapped.targetName = resolved.targetName
+  mapped.sellerName = resolved.sellerName
+  return mapped
 }
 
-export async function getMyReviews(
-  userId: string,
-  params: PaginationParams,
-): Promise<PaginatedResponse<Review>> {
+export async function getMyReviews(userId: string, params: PaginationParams): Promise<PaginatedResponse<Review>> {
   const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = { userId }
 
@@ -77,7 +170,6 @@ export async function getMyReviews(
     const q = params.search
     where.OR = [
       { comentario: { contains: q, mode: 'insensitive' } },
-      { targetName: { contains: q, mode: 'insensitive' } },
     ]
   }
 
@@ -86,29 +178,30 @@ export async function getMyReviews(
   }
 
   const [data, total] = await Promise.all([
-    prisma.review.findMany({
+    prisma.reseña.findMany({
       where,
+      include: { usuario: true },
       orderBy: { fecha: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.review.count({ where }),
+    prisma.reseña.count({ where }),
   ])
 
-  return {
-    data: data as unknown as Review[],
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
+  const reviews = data.map(r => mapReview(r))
+  const targetMap = await resolveTargetNames(reviews)
+  for (const review of reviews) {
+    const resolved = targetMap.get(`${review.tipo}:${review.targetId}`)
+    if (resolved) {
+      review.targetName = resolved.targetName
+      review.sellerName = resolved.sellerName
+    }
   }
+
+  return { data: reviews, total, page, limit, totalPages: Math.ceil(total / limit) }
 }
 
-export async function getTargetReviews(
-  targetId: string,
-  tipo: 'product' | 'seller',
-  params: PaginationParams,
-): Promise<PaginatedResponse<Review>> {
+export async function getTargetReviews(targetId: string, tipo: 'product' | 'seller', params: PaginationParams): Promise<PaginatedResponse<Review>> {
   const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = { targetId, tipo, estado: 'published' }
 
@@ -116,27 +209,29 @@ export async function getTargetReviews(
     const q = params.search
     where.OR = [
       { comentario: { contains: q, mode: 'insensitive' } },
-      { userName: { contains: q, mode: 'insensitive' } },
+      { usuario: { nombre: { contains: q, mode: 'insensitive' } } },
     ]
   }
 
   const [data, total] = await Promise.all([
-    prisma.review.findMany({
+    prisma.reseña.findMany({
       where,
+      include: { usuario: true },
       orderBy: { fecha: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.review.count({ where }),
+    prisma.reseña.count({ where }),
   ])
 
-  return {
-    data: data as unknown as Review[],
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
+  const reviews = data.map(r => mapReview(r))
+  const resolved = await resolveTargetName(tipo, targetId)
+  for (const review of reviews) {
+    review.targetName = resolved.targetName
+    review.sellerName = resolved.sellerName
   }
+
+  return { data: reviews, total, page, limit, totalPages: Math.ceil(total / limit) }
 }
 
 export async function createReview(
@@ -163,7 +258,17 @@ export async function createReview(
     throw new Error('userId es requerido')
   }
 
-  const existing = await prisma.review.findFirst({
+  if (input.tipo === 'product') {
+    const product = await prisma.producto.findUnique({ where: { id: input.targetId } })
+    if (!product) throw new Error('Producto no encontrado')
+  } else {
+    const seller = await prisma.vendedor.findUnique({ where: { id: input.targetId } })
+    if (!seller) throw new Error('Vendedor no encontrado')
+  }
+
+  await ensureUser(userId, userName)
+
+  const existing = await prisma.reseña.findFirst({
     where: {
       userId,
       tipo: input.tipo,
@@ -175,24 +280,27 @@ export async function createReview(
     throw new Error('Ya existe una reseña activa para este producto/vendedor')
   }
 
-  const review = await prisma.review.create({
+  const review = await prisma.reseña.create({
     data: {
       tipo: input.tipo,
       targetId: input.targetId,
-      targetName: input.targetName ?? null,
-      sellerName: input.sellerName ?? null,
       userId,
-      userName: userName ?? null,
       rating: input.rating,
       comentario: input.comentario,
       estado: 'published',
     },
+    include: { usuario: true },
   })
-  return review as unknown as Review
+
+  const mapped = mapReview(review)
+  const resolved = await resolveTargetName(mapped.tipo, mapped.targetId)
+  mapped.targetName = resolved.targetName
+  mapped.sellerName = resolved.sellerName
+  return mapped
 }
 
 export async function updateReview(id: string, input: UpdateReviewInput, userId: string): Promise<Review | null> {
-  const existing = await prisma.review.findUnique({ where: { id } })
+  const existing = await prisma.reseña.findUnique({ where: { id } })
   if (!existing) throw new Error('Reseña no encontrada')
   if (existing.userId !== userId) throw new Error('No autorizado')
   if (existing.estado !== 'published') throw new Error('No se puede modificar una reseña reportada o eliminada')
@@ -207,40 +315,48 @@ export async function updateReview(id: string, input: UpdateReviewInput, userId:
     throw new Error(`comentario no puede superar los ${MAX_COMENTARIO_LENGTH} caracteres`)
   }
 
-  const review = await prisma.review.update({
+  const review = await prisma.reseña.update({
     where: { id },
-    data: {
-      rating: input.rating,
-      comentario: input.comentario,
-      fecha: new Date(),
-    },
+    data: { rating: input.rating, comentario: input.comentario, fecha: new Date() },
+    include: { usuario: true },
   })
-  return review as unknown as Review
+
+  const mapped = mapReview(review)
+  const resolved = await resolveTargetName(mapped.tipo, mapped.targetId)
+  mapped.targetName = resolved.targetName
+  mapped.sellerName = resolved.sellerName
+  return mapped
 }
 
 export async function deleteReview(id: string, userId: string): Promise<Review | null> {
-  const existing = await prisma.review.findUnique({ where: { id } })
+  const existing = await prisma.reseña.findUnique({ where: { id } })
   if (!existing) throw new Error('Reseña no encontrada')
   if (existing.userId !== userId) throw new Error('No autorizado')
   if (existing.estado !== 'published') throw new Error('No se puede eliminar una reseña reportada o eliminada')
 
-  const review = await prisma.review.update({
+  const review = await prisma.reseña.update({
     where: { id },
     data: { estado: 'removed' },
+    include: { usuario: true },
   })
-  return review as unknown as Review
+
+  const mapped = mapReview(review)
+  const resolved = await resolveTargetName(mapped.tipo, mapped.targetId)
+  mapped.targetName = resolved.targetName
+  mapped.sellerName = resolved.sellerName
+  return mapped
 }
 
 export async function getProductStats(targetId: string): Promise<ReviewStats> {
   const where = { targetId, tipo: 'product', estado: 'published' }
 
   const [aggregate, distribution] = await Promise.all([
-    prisma.review.aggregate({
+    prisma.reseña.aggregate({
       where,
       _avg: { rating: true },
       _count: { id: true },
     }),
-    prisma.review.groupBy({
+    prisma.reseña.groupBy({
       by: ['rating'],
       where,
       _count: { id: true },
@@ -248,12 +364,8 @@ export async function getProductStats(targetId: string): Promise<ReviewStats> {
   ])
 
   const ratingDistribution: Record<number, number> = {}
-  for (let i = 1; i <= 5; i++) {
-    ratingDistribution[i] = 0
-  }
-  for (const entry of distribution) {
-    ratingDistribution[entry.rating] = entry._count.id
-  }
+  for (let i = 1; i <= 5; i++) ratingDistribution[i] = 0
+  for (const entry of distribution) ratingDistribution[entry.rating] = entry._count.id
 
   return {
     averageRating: Math.round((aggregate._avg.rating ?? 0) * 10) / 10,
@@ -266,12 +378,12 @@ export async function getSellerStats(targetId: string): Promise<ReviewStats> {
   const where = { targetId, tipo: 'seller', estado: 'published' }
 
   const [aggregate, distribution] = await Promise.all([
-    prisma.review.aggregate({
+    prisma.reseña.aggregate({
       where,
       _avg: { rating: true },
       _count: { id: true },
     }),
-    prisma.review.groupBy({
+    prisma.reseña.groupBy({
       by: ['rating'],
       where,
       _count: { id: true },
@@ -279,12 +391,8 @@ export async function getSellerStats(targetId: string): Promise<ReviewStats> {
   ])
 
   const ratingDistribution: Record<number, number> = {}
-  for (let i = 1; i <= 5; i++) {
-    ratingDistribution[i] = 0
-  }
-  for (const entry of distribution) {
-    ratingDistribution[entry.rating] = entry._count.id
-  }
+  for (let i = 1; i <= 5; i++) ratingDistribution[i] = 0
+  for (const entry of distribution) ratingDistribution[entry.rating] = entry._count.id
 
   return {
     averageRating: Math.round((aggregate._avg.rating ?? 0) * 10) / 10,
@@ -301,8 +409,8 @@ export async function getReports(params: PaginationParams): Promise<PaginatedRes
     const q = params.search
     where.OR = [
       { razon: { contains: q, mode: 'insensitive' } },
-      { review: { comentario: { contains: q, mode: 'insensitive' } } },
-      { review: { userName: { contains: q, mode: 'insensitive' } } },
+      { reseña: { comentario: { contains: q, mode: 'insensitive' } } },
+      { reseña: { usuario: { nombre: { contains: q, mode: 'insensitive' } } } },
     ]
   }
 
@@ -311,32 +419,37 @@ export async function getReports(params: PaginationParams): Promise<PaginatedRes
   }
 
   const [data, total] = await Promise.all([
-    prisma.report.findMany({
+    prisma.reporte.findMany({
       where,
-      include: { review: true },
+      include: { reseña: { include: { usuario: true } }, reportero: true, resolvedor: true },
       orderBy: { fecha: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.report.count({ where }),
+    prisma.reporte.count({ where }),
   ])
 
-  return {
-    data: data as unknown as Report[],
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
+  const reports = data.map(r => mapReport(r)).filter(r => r.review)
+
+  const targetMap = await resolveTargetNames(
+    reports.map(r => ({ tipo: r.review!.tipo, targetId: r.review!.targetId })),
+  )
+  for (const report of reports) {
+    if (report.review) {
+      const resolved = targetMap.get(`${report.review.tipo}:${report.review.targetId}`)
+      if (resolved) {
+        report.review.targetName = resolved.targetName
+        report.review.sellerName = resolved.sellerName
+      }
+    }
   }
+
+  return { data: reports, total, page, limit, totalPages: Math.ceil(total / limit) }
 }
 
-export async function createReport(
-  input: CreateReportInput,
-  reporterId: string,
-  reporterName: string,
-): Promise<Report> {
-  if (!input.reviewId || typeof input.reviewId !== 'string') {
-    throw new Error('reviewId es requerido')
+export async function createReport(input: CreateReportInput, reporterId: string, reporterName: string): Promise<Report> {
+  if (!input.reseñaId || typeof input.reseñaId !== 'string') {
+    throw new Error('reseñaId es requerido')
   }
   if (!input.razon || !input.razon.trim()) {
     throw new Error('razon es requerido')
@@ -345,79 +458,105 @@ export async function createReport(
     throw new Error('reporterId es requerido')
   }
 
-  const review = await prisma.review.findUnique({ where: { id: input.reviewId } })
-  if (!review) {
-    throw new Error('Review no encontrada')
-  }
-  if (review.estado === 'removed') {
-    throw new Error('No se puede reportar una reseña eliminada')
-  }
-  if (review.estado === 'reported') {
-    throw new Error('Esta reseña ya fue reportada')
-  }
+  await ensureUser(reporterId, reporterName)
+
+  const review = await prisma.reseña.findUnique({ where: { id: input.reseñaId } })
+  if (!review) throw new Error('Review no encontrada')
+  if (review.estado === 'removed') throw new Error('No se puede reportar una reseña eliminada')
+  if (review.estado === 'reported') throw new Error('Esta reseña ya fue reportada')
 
   const [report] = await Promise.all([
-    prisma.report.create({
+    prisma.reporte.create({
       data: {
-        reviewId: input.reviewId,
+        reseñaId: input.reseñaId,
         reporterId,
-        reporterName: reporterName ?? null,
         razon: input.razon,
       },
-      include: { review: true },
+      include: {
+        reseña: { include: { usuario: true } },
+        reportero: true,
+      },
     }),
-    prisma.review.update({
-      where: { id: input.reviewId },
+    prisma.reseña.update({
+      where: { id: input.reseñaId },
       data: { estado: 'reported' },
     }),
   ])
 
-  return report as unknown as Report
+  const mapped = mapReport(report)
+  if (mapped.review) {
+    const resolved = await resolveTargetName(mapped.review.tipo, mapped.review.targetId)
+    mapped.review.targetName = resolved.targetName
+    mapped.review.sellerName = resolved.sellerName
+  }
+  return mapped
 }
 
 export async function getReportById(id: string): Promise<Report | null> {
-  const report = await prisma.report.findUnique({
+  const report = await prisma.reporte.findUnique({
     where: { id },
-    include: { review: true },
+    include: {
+      reseña: { include: { usuario: true } },
+      reportero: true,
+      resolvedor: true,
+    },
   })
-  return report as unknown as Report | null
+  if (!report) return null
+  const mapped = mapReport(report)
+  if (mapped.review) {
+    const resolved = await resolveTargetName(mapped.review.tipo, mapped.review.targetId)
+    mapped.review.targetName = resolved.targetName
+    mapped.review.sellerName = resolved.sellerName
+  }
+  return mapped
 }
 
-export async function resolveReport(
-  id: string,
-  options: ResolveOptions,
-): Promise<Report | null> {
-  const report = await prisma.report.findUnique({ where: { id } })
+export async function resolveReport(id: string, options: ResolveOptions): Promise<Report | null> {
+  const report = await prisma.reporte.findUnique({ where: { id } })
   if (!report) return null
+
+  if (options.adminComment && options.adminComment.length > MAX_ADMIN_COMMENT_LENGTH) {
+    throw new Error(`adminComment no puede superar los ${MAX_ADMIN_COMMENT_LENGTH} caracteres`)
+  }
 
   const updateData: Record<string, unknown> = {
     resuelto: true,
-    resolvedBy: options.adminName,
+    resolvedBy: options.adminId,
     adminComment: options.adminComment ?? null,
   }
 
   if (options.action === 'remove') {
     await Promise.all([
-      prisma.report.update({ where: { id }, data: updateData }),
-      prisma.review.update({
-        where: { id: report.reviewId },
+      prisma.reporte.update({ where: { id }, data: updateData }),
+      prisma.reseña.update({
+        where: { id: report.reseñaId },
         data: { estado: 'removed' },
       }),
     ])
   } else {
     await Promise.all([
-      prisma.report.update({ where: { id }, data: updateData }),
-      prisma.review.update({
-        where: { id: report.reviewId },
+      prisma.reporte.update({ where: { id }, data: updateData }),
+      prisma.reseña.update({
+        where: { id: report.reseñaId },
         data: { estado: 'published' },
       }),
     ])
   }
 
-  const updated = await prisma.report.findUnique({
+  const updated = await prisma.reporte.findUnique({
     where: { id },
-    include: { review: true },
+    include: {
+      reseña: { include: { usuario: true } },
+      reportero: true,
+      resolvedor: true,
+    },
   })
 
-  return updated as unknown as Report | null
+  return updated ? mapReport(updated) : null
+}
+
+export async function isAdmin(userId: string): Promise<boolean> {
+  if (!userId) return false
+  const user = await prisma.usuario.findUnique({ where: { id: userId } })
+  return user?.role === 'admin'
 }

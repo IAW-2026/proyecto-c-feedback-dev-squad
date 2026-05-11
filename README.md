@@ -16,6 +16,7 @@
 | Estilos | Tailwind CSS |
 | Base de datos | PostgreSQL + Prisma |
 | Lenguaje | TypeScript |
+| IA | Google Gemini (gemini-2.5-flash) |
 
 ---
 
@@ -24,6 +25,7 @@
 - Crear reseñas de productos y vendedores con calificación de 1 a 5 estrellas
 - Ver historial de reseñas propias con búsqueda y filtros
 - Panel de administración para gestionar reportes (desestimar o eliminar reseñas)
+- Opinión generada por IA para ayudar al admin a decidir sobre reportes
 
 ---
 
@@ -40,13 +42,13 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 ## Variables de entorno
 
-Todas en `.env.example`. Las principales:
-
 | Variable | Descripción |
 |----------|-------------|
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publishable key de Clerk |
 | `CLERK_SECRET_KEY` | Secret key de Clerk |
 | `DATABASE_URL` | Connection string de PostgreSQL |
+| `API_SECRET_KEY` | API key para endpoints REST (compartida con otras apps) |
+| `GEMINI_API_KEY` | API key de Google Gemini |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/sign-up` |
 
@@ -55,19 +57,20 @@ Todas en `.env.example`. Las principales:
 ## Usuarios
 
 ### Usuario normal (comprador/vendedor)
-Se registra por sí mismo desde `/sign-up`. Puede crear reseñas y ver sus reseñas.
+Se registra por sí mismo desde `/sign-up`. Puede crear reseñas y ver sus reseñas. La primera vez que realiza una acción, su cuenta se sincroniza automáticamente en la base de datos local.
 
 ### Administrador
-Un usuario normal debe ser promovido a admin en el panel de Clerk:
+El rol de administrador se gestiona localmente en la base de datos:
 
-1. Ir a [Dashboard de Clerk](https://dashboard.clerk.com) → Users
-2. Seleccionar el usuario
-3. En **Metadata** → **Public metadata**, agregar:
-   ```json
-   { "role": "admin" }
+1. Obtener el ID del usuario desde Clerk (dashboard o `user.id` en consola)
+2. Ejecutar en la base de datos:
+   ```sql
+   UPDATE "Usuario" SET role = 'admin' WHERE id = 'clerk_user_id';
    ```
-4. El usuario ya puede acceder a `/admin/reportes`
-
+3. También se puede hacer desde Prisma Studio:
+   ```bash
+   pnpm prisma studio
+   ```
 ---
 
 ## Rutas
@@ -87,9 +90,9 @@ Un usuario normal debe ser promovido a admin en el panel de Clerk:
 
 La Feedback App expone endpoints REST para ser consumidos por las otras apps del ecosistema ZapasYA (Buyer App, Seller App). Están disponibles en `/api/`.
 
-> **Nota:** Todos los endpoints usan formato JSON. Los IDs son UUIDs.
->
-> **Auth pendiente:** Estos endpoints aún no tienen autenticación. Falta definir e implementar `validateApiKey()`.
+> **Auth:** Todos los endpoints requieren la API key compartida. Se envía por:
+> - **Header:** `Authorization: Bearer <api_key>`
+> - **Query param:** `?api_key=<api_key>`
 
 ---
 
@@ -105,8 +108,7 @@ Crear una reseña de vendedor.
   "userId": "uuid-del-comprador",
   "userName": "Juan Pérez",
   "rating": 4,
-  "comentario": "Buena atención, respondió rápido",
-  "targetName": "Zapatería Deportiva SRL"
+  "comentario": "Buena atención, respondió rápido"
 }
 ```
 
@@ -115,9 +117,8 @@ Crear una reseña de vendedor.
 | targetId | string | sí | ID del vendedor a calificar |
 | userId | string | sí | ID del comprador que califica |
 | rating | number | sí | Calificación del 1 al 5 |
-| comentario | string | sí | Texto de la reseña |
-| userName | string | — | Nombre del comprador (visible en la reseña) |
-| targetName | string | — | Nombre del vendedor (para mostrar sin lookup) |
+| comentario | string | sí | Texto de la reseña (mín. 10 caracteres) |
+| userName | string | — | Nombre del comprador |
 
 **Response 201:**
 
@@ -140,7 +141,9 @@ Crear una reseña de vendedor.
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 400 | Datos inválidos (rating fuera de rango, campos faltantes) |
+| 409 | Ya existe una reseña activa para este vendedor |
 | 500 | Error interno del servidor |
 
 ---
@@ -157,9 +160,7 @@ Crear una reseña de producto.
   "userId": "uuid-del-comprador",
   "userName": "María López",
   "rating": 5,
-  "comentario": "Excelente producto, tal como se describe",
-  "targetName": "Nike Air Max 270",
-  "sellerName": "Sneakers Store"
+  "comentario": "Excelente producto, tal como se describe"
 }
 ```
 
@@ -168,10 +169,8 @@ Crear una reseña de producto.
 | targetId | string | sí | ID del producto a calificar |
 | userId | string | sí | ID del comprador que califica |
 | rating | number | sí | Calificación del 1 al 5 |
-| comentario | string | sí | Texto de la reseña |
-| userName | string | — | Nombre del comprador (visible en la reseña) |
-| targetName | string | — | Nombre del producto (para mostrar sin lookup) |
-| sellerName | string | — | Nombre del vendedor (para reseñas de producto) |
+| comentario | string | sí | Texto de la reseña (mín. 10 caracteres) |
+| userName | string | — | Nombre del comprador |
 
 **Response 201:**
 
@@ -195,7 +194,9 @@ Crear una reseña de producto.
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 400 | Datos inválidos (rating fuera de rango, campos faltantes) |
+| 409 | Ya existe una reseña activa para este producto |
 | 500 | Error interno del servidor |
 
 ---
@@ -212,7 +213,7 @@ Obtener reseñas de un producto. Si se incluye `?includeSummary=true` también d
 | limit | number | 10 | Cantidad de reseñas por página |
 | search | string | — | Búsqueda por texto en el comentario |
 | includeSummary | boolean | false | Si es `true`, incluye `stats` y `aiSummary` en la respuesta |
-| name | string | — | Nombre del producto (para el resumen de IA; si no se envía, usa el de la primera reseña) |
+| name | string | — | Nombre del producto (para el resumen de IA; si no se envía, se obtiene de la base de datos) |
 
 **Response 200 (sin IA):**
 
@@ -224,8 +225,11 @@ Obtener reseñas de un producto. Si se incluye `?includeSummary=true` también d
       "tipo": "product",
       "targetId": "uuid-del-producto",
       "userId": "uuid-del-comprador",
+      "userName": "María López",
       "rating": 5,
       "comentario": "Excelente producto",
+      "targetName": "Nike Air Max 270",
+      "sellerName": "Sneakers Store",
       "estado": "published",
       "fecha": "2026-05-07T19:30:00.000Z"
     }
@@ -247,8 +251,11 @@ Obtener reseñas de un producto. Si se incluye `?includeSummary=true` también d
       "tipo": "product",
       "targetId": "uuid-del-producto",
       "userId": "uuid-del-comprador",
+      "userName": "María López",
       "rating": 5,
       "comentario": "Excelente producto",
+      "targetName": "Nike Air Max 270",
+      "sellerName": "Sneakers Store",
       "estado": "published",
       "fecha": "2026-05-07T19:30:00.000Z"
     }
@@ -276,6 +283,7 @@ Obtener reseñas de un producto. Si se incluye `?includeSummary=true` también d
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 500 | Error interno del servidor |
 
 ---
@@ -292,7 +300,7 @@ Obtener reseñas de un vendedor. Si se incluye `?includeSummary=true` también d
 | limit | number | 10 | Cantidad de reseñas por página |
 | search | string | — | Búsqueda por texto en el comentario |
 | includeSummary | boolean | false | Si es `true`, incluye `stats` y `aiSummary` en la respuesta |
-| name | string | — | Nombre del vendedor (para el resumen de IA; si no se envía, usa el de la primera reseña) |
+| name | string | — | Nombre del vendedor (para el resumen de IA; si no se envía, se obtiene de la base de datos) |
 
 **Response 200 (sin IA):**
 
@@ -304,8 +312,10 @@ Obtener reseñas de un vendedor. Si se incluye `?includeSummary=true` también d
       "tipo": "seller",
       "targetId": "uuid-del-vendedor",
       "userId": "uuid-del-comprador",
+      "userName": "Juan García",
       "rating": 4,
       "comentario": "Buena atención",
+      "targetName": "Zapatería Deportiva SRL",
       "estado": "published",
       "fecha": "2026-05-07T19:30:00.000Z"
     }
@@ -327,8 +337,10 @@ Obtener reseñas de un vendedor. Si se incluye `?includeSummary=true` también d
       "tipo": "seller",
       "targetId": "uuid-del-vendedor",
       "userId": "uuid-del-comprador",
+      "userName": "Juan García",
       "rating": 4,
       "comentario": "Buena atención",
+      "targetName": "Zapatería Deportiva SRL",
       "estado": "published",
       "fecha": "2026-05-07T19:30:00.000Z"
     }
@@ -356,6 +368,7 @@ Obtener reseñas de un vendedor. Si se incluye `?includeSummary=true` también d
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 500 | Error interno del servidor |
 
 ---
@@ -378,14 +391,14 @@ Reportar una reseña específica.
 |-------|------|:-----------:|-------------|
 | reporterId | string | sí | ID del usuario que reporta |
 | razon | string | sí | Motivo del reporte |
-| reporterName | string | — | Nombre del usuario que reporta (visible para el admin) |
+| reporterName | string | — | Nombre del usuario que reporta |
 
 **Response 201:**
 
 ```json
 {
   "id": "uuid-generado",
-  "reviewId": "uuid-de-la-review",
+  "reseñaId": "uuid-de-la-reseña",
   "reporterId": "uuid-del-usuario-que-reporta",
   "reporterName": "Carlos García",
   "razon": "Contenido inapropiado",
@@ -398,8 +411,10 @@ Reportar una reseña específica.
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 400 | Datos inválidos (campos faltantes) |
 | 404 | Review no encontrada |
+| 409 | Esta reseña ya fue reportada |
 | 500 | Error interno del servidor |
 
 ---
@@ -428,6 +443,7 @@ Obtener estadísticas de reseñas de un producto.
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 500 | Error interno del servidor |
 
 ---
@@ -456,6 +472,7 @@ Obtener estadísticas de reseñas de un vendedor.
 
 | Código | Descripción |
 |--------|-------------|
+| 401 | API key inválida o faltante |
 | 500 | Error interno del servidor |
 
 ---
@@ -470,4 +487,26 @@ Obtener estadísticas de reseñas de un vendedor.
 | GET | /api/reviews/seller/[id] | Obtener reseñas de vendedor |
 | POST | /api/reviews/[id]/report | Reportar una reseña |
 | GET | /api/stats/product/[id] | Estadísticas de producto |
-| GET | /api/stats/seller/[id] | Estadísticas de vendedor |  
+| GET | /api/stats/seller/[id] | Estadísticas de vendedor |
+
+---
+
+## Modelo de datos
+
+### Tablas
+
+| Tabla | Descripción |
+|-------|-------------|
+| `Usuario` | Usuarios sincronizados desde Clerk con rol local (user/admin) |
+| `Producto` | Productos replicados desde Seller App |
+| `Vendedor` | Vendedores replicados desde Seller App |
+| `Reseña` | Reseñas de productos y vendedores |
+| `Reporte` | Reportes de reseñas con resolución por admin |
+
+### Relaciones
+
+- `Reseña.usuarioId` → `Usuario.id`
+- `Reporte.reseñaId` → `Reseña.id`
+- `Reporte.reporterId` → `Usuario.id`
+- `Reporte.resolvedBy` → `Usuario.id` (admin que resuelve)
+- `Producto.vendedorId` → `Vendedor.id`
