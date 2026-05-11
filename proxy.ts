@@ -1,4 +1,5 @@
-import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { prisma } from './lib/prisma'
 
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin(.*)'])
 
@@ -19,17 +20,14 @@ export default clerkMiddleware(async (auth, req) => {
     if (!userId) {
       return Response.redirect(new URL('/?error=no_privileges', req.url))
     }
-    
+
     try {
-      const client = await clerkClient()
-      const user = await client.users.getUser(userId)
-      const role = (user as any)?.publicMetadata?.role
-      
-      if (role !== 'admin') {
+      const user = await prisma.usuario.findUnique({ where: { id: userId } })
+      if (!user || user.role !== 'admin') {
         return Response.redirect(new URL('/?error=no_privileges', req.url))
       }
     } catch (error) {
-      console.error('Error fetching user from Clerk:', error)
+      console.error('Error checking admin role:', error)
       return Response.redirect(new URL('/?error=no_privileges', req.url))
     }
   }

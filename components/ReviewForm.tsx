@@ -68,15 +68,9 @@ export default function ReviewForm({ onSubmit, loading, excludeIds }: Props) {
       return
     }
 
-    const selectedTarget = tipo === 'product'
-      ? mockProducts.find(p => p.id === targetId)
-      : mockSellers.find(s => s.id === targetId)
-
     await onSubmit({
       tipo,
       targetId: targetId.trim(),
-      targetName: selectedTarget?.name,
-      sellerName: tipo === 'product' ? (selectedTarget as { sellerName?: string })?.sellerName : undefined,
       rating,
       comentario: comentario.trim(),
     })
@@ -147,11 +141,11 @@ export default function ReviewForm({ onSubmit, loading, excludeIds }: Props) {
           value={comentario}
           onChange={e => setComentario(e.target.value)}
           placeholder="Contá tu experiencia..."
-          maxLength={100}
+          maxLength={500}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none"
         />
         <p className="text-xs text-gray-400 mt-1">
-          {comentario.length}/100 caracteres (mín. 10)
+          {comentario.length}/500 caracteres (mín. 10)
         </p>
       </div>
 

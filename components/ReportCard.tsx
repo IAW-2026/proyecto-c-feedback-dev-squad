@@ -19,6 +19,7 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiExpanded, setAiExpanded] = useState(false)
+  const [copied, setCopied] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
@@ -42,10 +43,14 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
     }
   }
 
-  const handleUseSuggestion = () => {
-    setComment(aiOpinion)
-    setAiExpanded(false)
-    setShowModal(true)
+  const handleCopySuggestion = async () => {
+    try {
+      await navigator.clipboard.writeText(aiOpinion)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
   }
 
   const handleOpenModal = (action: 'dismiss' | 'remove') => {
@@ -214,10 +219,10 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
                     {aiOpinion}
                   </p>
                   <button
-                    onClick={handleUseSuggestion}
+                    onClick={handleCopySuggestion}
                     className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
                   >
-                    Usar sugerencia
+                    {copied ? '¡Copiada!' : 'Copiar sugerencia'}
                   </button>
                 </>
               )}
@@ -245,9 +250,13 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
               value={comment}
               onChange={e => setComment(e.target.value)}
               rows={2}
+              maxLength={500}
               placeholder="Agregá un comentario..."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none mb-4"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none mb-1"
             />
+            <p className="text-xs text-gray-400 mb-4 text-right">
+              {comment.length}/500 caracteres
+            </p>
             <div className="flex gap-3">
               <button
                 ref={confirmRef}

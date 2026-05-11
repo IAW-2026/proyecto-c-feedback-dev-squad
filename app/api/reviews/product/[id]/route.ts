@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../../lib/prisma'
 import { getTargetReviews, getProductStats } from '../../../../../services/db'
 import { generateReviewSummary } from '../../../../../lib/gemini'
+import { validateApiKey } from '../../../../../lib/validateApiKey'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // TODO: agregar validateApiKey() cuando se defina con el equipo
+  if (!validateApiKey(req)) {
+    return NextResponse.json({ error: 'API key inválida o faltante' }, { status: 401 })
+  }
   try {
     const { id: targetId } = await params
     if (!targetId) {
@@ -25,15 +28,17 @@ export async function GET(
     if (includeSummary) {
       const stats = await getProductStats(targetId)
 
-      const allReviews = await prisma.review.findMany({
+      const allReviews = await prisma.reseña.findMany({
         where: { targetId, tipo: 'product', estado: 'published' },
+        include: { usuario: true },
         take: 50,
         orderBy: { fecha: 'desc' },
       })
 
       let aiSummary: string | undefined
       if (allReviews.length > 0) {
-        const targetName = url.searchParams.get('name') || allReviews[0].targetName || 'el producto'
+        const product = await prisma.producto.findUnique({ where: { id: targetId } })
+        const targetName = url.searchParams.get('name') || product?.nombre || 'el producto'
         aiSummary = await generateReviewSummary(targetName, allReviews)
       }
 

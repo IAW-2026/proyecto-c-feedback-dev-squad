@@ -7,30 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Review {
+model Usuario {
+  id        String    @id
+  nombre    String
+  email     String?
+  role      String    @default("user")
+  fotoUrl   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  reseñas           Reseña[]
+  reportesCreados   Reporte[] @relation("ReporteCreado")
+  reportesResueltos Reporte[] @relation("ReporteResuelto")
+}
+
+model Producto {
+  id         String    @id
+  nombre     String
+  vendedorId String?
+  vendedor   Vendedor? @relation(fields: [vendedorId], references: [id])
+  createdAt  DateTime  @default(now())
+}
+
+model Vendedor {
+  id        String    @id
+  nombre    String
+  createdAt DateTime  @default(now())
+
+  productos Producto[]
+}
+
+model Reseña {
   id         String   @id @default(uuid())
   tipo       String
   targetId   String
-  targetName String?
-  sellerName String?
   userId     String
-  userName   String?
+  usuario    Usuario  @relation(fields: [userId], references: [id])
   rating     Int
   comentario String
   estado     String   @default("published")
   fecha      DateTime @default(now())
-  reports    Report[]
+
+  reportes   Reporte[]
 }
 
-model Report {
+model Reporte {
   id           String   @id @default(uuid())
-  reviewId     String
+  reseñaId     String
+  reseña       Reseña   @relation(fields: [reseñaId], references: [id])
   reporterId   String
-  reporterName String?
+  reportero    Usuario  @relation("ReporteCreado", fields: [reporterId], references: [id])
   razon        String
   resuelto     Boolean  @default(false)
   resolvedBy   String?
+  resolvedor   Usuario? @relation("ReporteResuelto", fields: [resolvedBy], references: [id])
   adminComment String?
   fecha        DateTime @default(now())
-  review       Review   @relation(fields: [reviewId], references: [id])
 }

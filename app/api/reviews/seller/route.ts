@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
+import { ensureUser } from '../../../../lib/ensureUser'
+import { resolveTargetName } from '../../../../services/db'
+import { validateApiKey } from '../../../../lib/validateApiKey'
 
 export async function POST(req: NextRequest) {
-  // TODO: agregar validateApiKey() cuando se defina con el equipo
+  if (!validateApiKey(req)) {
+    return NextResponse.json({ error: 'API key inválida o faltante' }, { status: 401 })
+  }
   try {
     const body = await req.json()
-    const { targetId, userId, userName, rating, comentario, targetName } = body
+    const { targetId, userId, userName, rating, comentario } = body
 
     if (!targetId || typeof targetId !== 'string') {
       return NextResponse.json({ error: 'targetId es requerido' }, { status: 400 })
@@ -23,7 +28,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'comentario no puede superar los 500 caracteres' }, { status: 400 })
     }
 
-    const existing = await prisma.review.findFirst({
+    await ensureUser(userId, userName)
+
+    const existing = await prisma.reseña.findFirst({
       where: {
         userId,
         tipo: 'seller',
@@ -35,20 +42,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ya existe una reseña activa para este vendedor' }, { status: 409 })
     }
 
-    const review = await prisma.review.create({
+    const review = await prisma.reseña.create({
       data: {
         tipo: 'seller',
         targetId,
-        targetName: targetName ?? null,
         userId,
-        userName: userName ?? null,
         rating,
         comentario,
         estado: 'published',
       },
+      include: { usuario: true },
     })
 
-    return NextResponse.json(review, { status: 201 })
+    const resolved = await resolveTargetName('seller', targetId)
+    const result = {
+      id: review.id,
+      tipo: review.tipo,
+      targetId: review.targetId,
+      userId: review.userId,
+      rating: review.rating,
+      comentario: review.comentario,
+      estado: review.estado,
+      fecha: review.fecha,
+      userName: review.usuario.nombre,
+      targetName: resolved.targetName,
+    }
+
+    return NextResponse.json(result, { status: 201 })
   } catch (error) {
     console.error('Error al crear reseña de vendedor:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
