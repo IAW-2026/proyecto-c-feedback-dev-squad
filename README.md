@@ -47,7 +47,8 @@ Abrir [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publishable key de Clerk |
 | `CLERK_SECRET_KEY` | Secret key de Clerk |
 | `DATABASE_URL` | Connection string de PostgreSQL |
-| `API_SECRET_KEY` | API key para endpoints REST (compartida con otras apps) |
+| `API_KEY_BUYER_APP` | API key para Buyer App |
+| `API_KEY_SELLER_APP` | API key para Seller App |
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/sign-up` |
@@ -90,7 +91,12 @@ El rol de administrador se gestiona localmente en la base de datos:
 
 La Feedback App expone endpoints REST para ser consumidos por las otras apps del ecosistema ZapasYA (Buyer App, Seller App). Están disponibles en `/api/`.
 
-> **Auth:** Todos los endpoints requieren la API key compartida. Se envía por:
+> **Auth:** Todos los endpoints requieren una API key válida con restricción por servicio:
+> - Endpoints de creación (reviews) solo aceptan key de **Buyer App**
+> - Endpoints de consulta de reseñas de vendedor solo aceptan key de **Seller App**
+> - Endpoints de reportes y estadísticas aceptan ambas keys
+>
+> Se envía por:
 > - **Header:** `Authorization: Bearer <api_key>`
 > - **Query param:** `?api_key=<api_key>`
 

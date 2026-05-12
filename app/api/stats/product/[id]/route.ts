@@ -6,7 +6,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!validateApiKey(req)) {
+  if (!validateApiKey(req, ['buyer-app', 'seller-app'])) {
     return NextResponse.json({ error: 'API key inválida o faltante' }, { status: 401 })
   }
   try {
