@@ -5,7 +5,7 @@ import { resolveTargetName } from '../../../../services/db'
 import { validateApiKey } from '../../../../lib/validateApiKey'
 
 export async function POST(req: NextRequest) {
-  if (!validateApiKey(req)) {
+  if (!validateApiKey(req, ['buyer-app'])) {
     return NextResponse.json({ error: 'API key inválida o faltante' }, { status: 401 })
   }
   try {
