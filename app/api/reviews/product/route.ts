@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
     if (!comentario || typeof comentario !== 'string' || comentario.trim().length < 10) {
       return NextResponse.json({ error: 'comentario debe tener al menos 10 caracteres' }, { status: 400 })
     }
-    if (comentario.length > 500) {
-      return NextResponse.json({ error: 'comentario no puede superar los 500 caracteres' }, { status: 400 })
+    if (comentario.length > 200) {
+      return NextResponse.json({ error: 'comentario no puede superar los 200 caracteres' }, { status: 400 })
     }
 
     await ensureUser(userId, userName)

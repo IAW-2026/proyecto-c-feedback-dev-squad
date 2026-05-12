@@ -11,7 +11,7 @@ import type {
   CreateReportInput,
 } from '../types'
 
-const MAX_COMENTARIO_LENGTH = 100
+const MAX_COMENTARIO_LENGTH = 200
 const MAX_ADMIN_COMMENT_LENGTH = 500
 
 function sanitizePagination(page: number, limit: number): { page: number; limit: number } {

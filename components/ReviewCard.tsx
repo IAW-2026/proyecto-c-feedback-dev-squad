@@ -113,10 +113,10 @@ export default function ReviewCard({ review, editable, onUpdate, onDelete }: Pro
               rows={3}
               value={editComentario}
               onChange={e => setEditComentario(e.target.value)}
-              maxLength={100}
+              maxLength={200}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none"
             />
-            <p className="text-xs text-gray-400 mt-1">{editComentario.length}/100 caracteres</p>
+            <p className="text-xs text-gray-400 mt-1">{editComentario.length}/200 caracteres</p>
           </div>
 
           {editError && (
