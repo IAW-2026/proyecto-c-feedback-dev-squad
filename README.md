@@ -27,6 +27,9 @@
 - Ver historial de reseñas propias con búsqueda y filtros
 - Panel de administración para gestionar reportes (desestimar o eliminar reseñas)
 - Opinión generada por IA para ayudar al admin a decidir sobre reportes
+- Navegación pública de productos y vendedores con búsqueda y filtros
+- Estadísticas de reseñas con distribución de puntuaciones
+- Resumen de reseñas generado por IA
 
 ---
 
@@ -94,6 +97,9 @@ El rol de administrador se gestiona localmente en la base de datos:
 | `/dashboard/crear-resena` | Autenticado | Crear reseña |
 | `/dashboard/mis-resenas` | Autenticado | Historial de reseñas |
 | `/admin/reportes` | Admin | Moderación de reportes |
+| `/explorar` | Público | Explorar reseñas (tabs + búsqueda) |
+| `/explorar/producto/[id]` | Público | Reseñas de un producto |
+| `/explorar/vendedor/[id]` | Público | Reseñas de un vendedor |
 
 ---
 
