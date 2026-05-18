@@ -9,9 +9,11 @@ interface Props {
   onSubmit: (input: CreateReviewInput) => Promise<void>
   loading?: boolean
   excludeIds?: string[]
+  purchasableProductIds?: string[]
+  purchasableSellerIds?: string[]
 }
 
-export default function ReviewForm({ onSubmit, loading, excludeIds }: Props) {
+export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableProductIds, purchasableSellerIds }: Props) {
   const [tipo, setTipo] = useState<ReviewType | null>(null)
   const [targetId, setTargetId] = useState('')
   const [rating, setRating] = useState(0)
@@ -32,8 +34,14 @@ export default function ReviewForm({ onSubmit, loading, excludeIds }: Props) {
     { id: 's3', name: 'Urban Kicks' },
   ]
 
-  const availableProducts = mockProducts.filter(p => !excludeIds?.includes(`product:${p.id}`))
-  const availableSellers = mockSellers.filter(s => !excludeIds?.includes(`seller:${s.id}`))
+  const availableProducts = mockProducts.filter(p =>
+    !excludeIds?.includes(`product:${p.id}`)
+    && (purchasableProductIds === undefined || purchasableProductIds.includes(p.id))
+  )
+  const availableSellers = mockSellers.filter(s =>
+    !excludeIds?.includes(`seller:${s.id}`)
+    && (purchasableSellerIds === undefined || purchasableSellerIds.includes(s.id))
+  )
 
   const reset = () => {
     setTipo(null)

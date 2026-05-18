@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma'
 import { ensureUser } from '../lib/ensureUser'
+import { getUserPurchases } from './purchases'
 import type {
   Review,
   Report,
@@ -264,6 +265,14 @@ export async function createReview(
   } else {
     const seller = await prisma.vendedor.findUnique({ where: { id: input.targetId } })
     if (!seller) throw new Error('Vendedor no encontrado')
+  }
+
+  const purchases = await getUserPurchases(userId)
+  if (input.tipo === 'product' && !purchases.productIds.includes(input.targetId)) {
+    throw new Error('No puedes reseñar un producto que no compraste')
+  }
+  if (input.tipo === 'seller' && !purchases.sellerIds.includes(input.targetId)) {
+    throw new Error('No puedes reseñar un vendedor al que no le compraste')
   }
 
   await ensureUser(userId, userName)

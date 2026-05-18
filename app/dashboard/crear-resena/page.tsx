@@ -5,7 +5,7 @@ import { useAuth, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import ReviewForm from '../../../components/ReviewForm'
 import ReviewCard from '../../../components/ReviewCard'
-import { createReview, getMyReviews } from '../../actions'
+import { createReview, getMyReviews, getUserPurchasableTargets } from '../../actions'
 import type { CreateReviewInput, Review } from '../../../types'
 
 export default function CrearResenaPage() {
@@ -16,6 +16,8 @@ export default function CrearResenaPage() {
   const [createdReview, setCreatedReview] = useState<Review | null>(null)
   const [error, setError] = useState('')
   const [reviewedIds, setReviewedIds] = useState<string[]>([])
+  const [purchasableProductIds, setPurchasableProductIds] = useState<string[] | undefined>(undefined)
+  const [purchasableSellerIds, setPurchasableSellerIds] = useState<string[] | undefined>(undefined)
 
   useEffect(() => {
     if (!userId) return
@@ -24,6 +26,10 @@ export default function CrearResenaPage() {
         .filter(r => r.estado === 'published' || r.estado === 'reported')
         .map(r => `${r.tipo}:${r.targetId}`)
       setReviewedIds(activeIds)
+    })
+    getUserPurchasableTargets().then(res => {
+      setPurchasableProductIds(res.productIds)
+      setPurchasableSellerIds(res.sellerIds)
     })
   }, [userId])
 
@@ -83,7 +89,7 @@ export default function CrearResenaPage() {
           </p>
         )}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <ReviewForm onSubmit={handleSubmit} loading={loading} excludeIds={reviewedIds} />
+          <ReviewForm onSubmit={handleSubmit} loading={loading} excludeIds={reviewedIds} purchasableProductIds={purchasableProductIds} purchasableSellerIds={purchasableSellerIds} />
         </div>
       </div>
     </main>
