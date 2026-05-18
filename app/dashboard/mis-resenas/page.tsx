@@ -25,14 +25,22 @@ export default function MisResenasPage() {
   useEffect(() => {
     const syncFromUrl = () => {
       const sp = new URLSearchParams(window.location.search)
-      setPage(Number(sp.get('page')) || 1)
-      setSearch(sp.get('search') || '')
-      setTipoFilter((sp.get('tipo') as ReviewType | 'all') || 'all')
+      const p = Math.max(1, Number(sp.get('page')) || 1)
+      const s = sp.get('search') || ''
+      const t = (sp.get('tipo') as ReviewType | 'all') || 'all'
+      setPage(p)
+      setSearch(s)
+      setTipoFilter(t)
+      const params = new URLSearchParams()
+      params.set('page', String(p))
+      if (s) params.set('search', s)
+      if (t !== 'all') params.set('tipo', t)
+      router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false })
     }
     syncFromUrl()
     window.addEventListener('popstate', syncFromUrl)
     return () => window.removeEventListener('popstate', syncFromUrl)
-  }, [])
+  }, [router, pathname])
 
   useEffect(() => {
     if (!userId) return
@@ -46,6 +54,10 @@ export default function MisResenasPage() {
           search,
           tipo: tipoFilter === 'all' ? undefined : tipoFilter,
         })
+        if (page > result.totalPages) {
+          updateParams({ page: '1' })
+          return
+        }
         setData(result)
       } catch {
         setError('Error al cargar las reseñas.')

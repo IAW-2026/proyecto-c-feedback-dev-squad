@@ -33,6 +33,12 @@ export async function POST(
     if (!razon || typeof razon !== 'string' || !razon.trim()) {
       return NextResponse.json({ error: 'razon es requerido' }, { status: 400 })
     }
+    if (razon.trim().length < 10) {
+      return NextResponse.json({ error: 'razon debe tener al menos 10 caracteres' }, { status: 400 })
+    }
+    if (razon.length > 200) {
+      return NextResponse.json({ error: 'razon no puede superar los 200 caracteres' }, { status: 400 })
+    }
     if (!reporterId || typeof reporterId !== 'string') {
       return NextResponse.json({ error: 'reporterId es requerido' }, { status: 400 })
     }
