@@ -23,9 +23,13 @@
 ## Funcionalidades
 
 - Crear reseñas de productos y vendedores con calificación de 1 a 5 estrellas
+- Validación de compras: solo se pueden reseñar productos/sellers que el usuario haya comprado
 - Ver historial de reseñas propias con búsqueda y filtros
 - Panel de administración para gestionar reportes (desestimar o eliminar reseñas)
 - Opinión generada por IA para ayudar al admin a decidir sobre reportes
+- Navegación pública de productos y vendedores con búsqueda y filtros
+- Estadísticas de reseñas con distribución de puntuaciones
+- Resumen de reseñas generado por IA
 
 ---
 
@@ -50,8 +54,17 @@ Abrir [http://localhost:3000](http://localhost:3000).
 | `API_KEY_BUYER_APP` | API key para Buyer App |
 | `API_KEY_SELLER_APP` | API key para Seller App |
 | `GEMINI_API_KEY` | API key de Google Gemini |
+| `BUYER_APP_URL` | URL base de la Buyer App para consultar compras del usuario (Etapa 3) |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/sign-up` |
+
+---
+
+## Filtrado por compras
+
+Los usuarios solo pueden reseñar productos que hayan comprado y vendedores de los que hayan adquirido un producto.
+
+Actualmente en **Etapa 2** el sistema devuelve todos los productos/vendedores disponibles (modo mock), por lo que no hay restricción visible.
 
 ---
 
@@ -84,6 +97,9 @@ El rol de administrador se gestiona localmente en la base de datos:
 | `/dashboard/crear-resena` | Autenticado | Crear reseña |
 | `/dashboard/mis-resenas` | Autenticado | Historial de reseñas |
 | `/admin/reportes` | Admin | Moderación de reportes |
+| `/explorar` | Público | Explorar reseñas (tabs + búsqueda) |
+| `/explorar/producto/[id]` | Público | Reseñas de un producto |
+| `/explorar/vendedor/[id]` | Público | Reseñas de un vendedor |
 
 ---
 

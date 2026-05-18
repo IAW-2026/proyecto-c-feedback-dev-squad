@@ -26,14 +26,22 @@ export default function ReportesPage() {
   useEffect(() => {
     const syncFromUrl = () => {
       const sp = new URLSearchParams(window.location.search)
-      setPage(Number(sp.get('page')) || 1)
-      setSearch(sp.get('search') || '')
-      setResolvedFilter((sp.get('estado') as ResolvedFilter) || 'all')
+      const p = Math.max(1, Number(sp.get('page')) || 1)
+      const s = sp.get('search') || ''
+      const rf = (sp.get('estado') as ResolvedFilter) || 'all'
+      setPage(p)
+      setSearch(s)
+      setResolvedFilter(rf)
+      const params = new URLSearchParams()
+      params.set('page', String(p))
+      if (s) params.set('search', s)
+      if (rf !== 'all') params.set('estado', rf)
+      router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false })
     }
     syncFromUrl()
     window.addEventListener('popstate', syncFromUrl)
     return () => window.removeEventListener('popstate', syncFromUrl)
-  }, [])
+  }, [router, pathname])
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -42,6 +50,10 @@ export default function ReportesPage() {
       try {
         const resolvedParam = resolvedFilter === 'all' ? undefined : resolvedFilter === 'resolved'
         const result = await getReports({ page, limit: 5, search, resolved: resolvedParam })
+        if (page > result.totalPages) {
+          updateParams({ page: '1' })
+          return
+        }
         setData(result)
       } catch {
         setError('Error al cargar los reportes.')

@@ -8,11 +8,13 @@ import ConfirmModal from './ConfirmModal'
 interface Props {
   review: Review
   editable?: boolean
+  reportable?: boolean
   onUpdate?: (id: string, data: UpdateReviewInput) => Promise<void>
   onDelete?: (id: string) => Promise<void>
+  onReport?: (id: string) => void
 }
 
-export default function ReviewCard({ review, editable, onUpdate, onDelete }: Props) {
+export default function ReviewCard({ review, editable, reportable, onUpdate, onDelete, onReport }: Props) {
   const [editing, setEditing] = useState(false)
   const [editRating, setEditRating] = useState(review.rating)
   const [editComentario, setEditComentario] = useState(review.comentario)
@@ -86,6 +88,15 @@ export default function ReviewCard({ review, editable, onUpdate, onDelete }: Pro
                 Eliminar
               </button>
             </>
+          )}
+          {reportable && review.estado === 'published' && (
+            <button
+              onClick={() => onReport?.(review.id)}
+              aria-label={`Reportar reseña de ${review.userName ?? 'Usuario'}`}
+              className="text-xs font-medium px-3 py-1.5 sm:py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200 hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
+            >
+              Reportar
+            </button>
           )}
         </div>
       </div>

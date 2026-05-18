@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma'
 import { ensureUser } from '../lib/ensureUser'
+import { getUserPurchases } from './purchases'
 import type {
   Review,
   Report,
@@ -266,6 +267,14 @@ export async function createReview(
     if (!seller) throw new Error('Vendedor no encontrado')
   }
 
+  const purchases = await getUserPurchases(userId)
+  if (input.tipo === 'product' && !purchases.productIds.includes(input.targetId)) {
+    throw new Error('No puedes reseñar un producto que no compraste')
+  }
+  if (input.tipo === 'seller' && !purchases.sellerIds.includes(input.targetId)) {
+    throw new Error('No puedes reseñar un vendedor al que no le compraste')
+  }
+
   await ensureUser(userId, userName)
 
   const existing = await prisma.reseña.findFirst({
@@ -454,6 +463,12 @@ export async function createReport(input: CreateReportInput, reporterId: string,
   if (!input.razon || !input.razon.trim()) {
     throw new Error('razon es requerido')
   }
+  if (input.razon.trim().length < 10) {
+    throw new Error('razon debe tener al menos 10 caracteres')
+  }
+  if (input.razon.length > MAX_COMENTARIO_LENGTH) {
+    throw new Error(`razon no puede superar los ${MAX_COMENTARIO_LENGTH} caracteres`)
+  }
   if (!reporterId) {
     throw new Error('reporterId es requerido')
   }
@@ -553,6 +568,45 @@ export async function resolveReport(id: string, options: ResolveOptions): Promis
   })
 
   return updated ? mapReport(updated) : null
+}
+
+export async function searchProducts(query: string, page = 1, limit = 10): Promise<{ data: { id: string; nombre: string; vendedorNombre?: string }[]; total: number }> {
+  const where = query.trim()
+    ? { nombre: { contains: query, mode: 'insensitive' as const } }
+    : {}
+  const [products, total] = await Promise.all([
+    prisma.producto.findMany({
+      where,
+      include: { vendedor: true },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { nombre: 'asc' },
+    }),
+    prisma.producto.count({ where }),
+  ])
+  return {
+    data: products.map(p => ({ id: p.id, nombre: p.nombre, vendedorNombre: p.vendedor?.nombre })),
+    total,
+  }
+}
+
+export async function searchSellers(query: string, page = 1, limit = 10): Promise<{ data: { id: string; nombre: string }[]; total: number }> {
+  const where = query.trim()
+    ? { nombre: { contains: query, mode: 'insensitive' as const } }
+    : {}
+  const [sellers, total] = await Promise.all([
+    prisma.vendedor.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { nombre: 'asc' },
+    }),
+    prisma.vendedor.count({ where }),
+  ])
+  return {
+    data: sellers.map(s => ({ id: s.id, nombre: s.nombre })),
+    total,
+  }
 }
 
 export async function isAdmin(userId: string): Promise<boolean> {
