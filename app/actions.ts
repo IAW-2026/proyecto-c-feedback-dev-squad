@@ -24,6 +24,7 @@ import {
 } from '../services/db'
 
 import { getAIOpinion } from '../lib/gemini'
+import { getUserPurchases as dbGetUserPurchases } from '../services/purchases'
 
 export async function getMyReviews(
   userId: string,
@@ -87,6 +88,12 @@ export async function getAIOpinionAction(reportId: string): Promise<string> {
   const report = await dbGetReportById(reportId)
   if (!report) throw new Error('Reporte no encontrado')
   return getAIOpinion(report)
+}
+
+export async function getUserPurchasableTargets(): Promise<{ productIds: string[]; sellerIds: string[] }> {
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+  return dbGetUserPurchases(userId)
 }
 
 export async function ensureUserAction(): Promise<void> {
