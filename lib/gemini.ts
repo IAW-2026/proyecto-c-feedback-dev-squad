@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import type { Report } from '../types'
+import type { Report, CreateReviewInput } from '../types'
 
 const API_KEY = process.env.GEMINI_API_KEY
 
@@ -21,6 +21,34 @@ async function queryGemini(prompt: string): Promise<string> {
   } catch (error) {
     if (error instanceof Error) throw error
     throw new Error('Error desconocido al consultar Gemini')
+  }
+}
+
+export async function moderateReview(input: CreateReviewInput): Promise<{ approved: boolean; reason: string }> {
+  const prompt = `Actuás como moderador de reseñas de un e-commerce de zapatillas. Evaluá la siguiente reseña y devolvé SOLO un JSON con dos campos: "approved" (boolean) y "reason" (string vacío si approved es true, o explicación si es false).
+
+La reseña debe ser rechazada si:
+- Contiene insultos, lenguaje ofensivo o discriminación
+- No tiene sentido o es incoherente
+- No está relacionada con el producto o vendedor
+- Es spam o publicidad no relacionada
+
+La razón debe ser una frase breve de máximo 10 palabras.
+
+Reseña a evaluar:
+Rating: ${input.rating}/5
+Comentario: "${input.comentario}"
+Tipo: ${input.tipo === 'product' ? 'producto' : 'vendedor'}
+Target: ${input.targetId}
+
+JSON:`
+
+  const raw = await queryGemini(prompt)
+  const cleaned = raw.replace(/```json|```/g, '').trim()
+  const parsed = JSON.parse(cleaned)
+  return {
+    approved: parsed.approved === true,
+    reason: typeof parsed.reason === 'string' ? parsed.reason : '',
   }
 }
 

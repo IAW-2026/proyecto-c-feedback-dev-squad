@@ -40,8 +40,8 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
     try {
       await onUpdate(review.id, { rating: editRating, comentario: editComentario.trim() })
       setEditing(false)
-    } catch {
-      setEditError('Error al guardar los cambios.')
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : 'Error al guardar los cambios.')
     } finally {
       setSaving(false)
     }

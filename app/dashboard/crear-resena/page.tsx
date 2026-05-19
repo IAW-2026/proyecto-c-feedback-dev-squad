@@ -37,7 +37,7 @@ function CrearResenaForm() {
   }
 
   const [loading, setLoading] = useState(false)
-  const [createdReview, setCreatedReview] = useState<Review | null>(null)
+  const [createdReview, setCreatedReview] = useState<Review & { moderationSkipped?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [reviewedIds, setReviewedIds] = useState<string[]>([])
   const [purchasableProductIds, setPurchasableProductIds] = useState<string[] | undefined>(undefined)
@@ -63,10 +63,10 @@ function CrearResenaForm() {
     setError('')
 
     try {
-      const review = await createReview(input, userId, user?.fullName ?? 'Usuario')
-      setCreatedReview(review)
-    } catch {
-      setError('Ocurrió un error al publicar la reseña.')
+      const created = await createReview(input, userId, user?.fullName ?? 'Usuario')
+      setCreatedReview(created)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ocurrió un error al publicar la reseña.')
     } finally {
       setLoading(false)
     }
@@ -81,6 +81,13 @@ function CrearResenaForm() {
               Reseña publicada correctamente
             </p>
           </div>
+          {createdReview.moderationSkipped && (
+            <div className="bg-amber-100 dark:bg-yellow-900/30 border border-amber-200 dark:border-yellow-800 rounded-xl p-4 mb-6 text-center" role="alert">
+              <p className="text-amber-700 dark:text-yellow-300 text-sm">
+                La reseña se publicó, pero la moderación por IA no estuvo disponible.
+              </p>
+            </div>
+          )}
           <ReviewCard review={createdReview} />
           <div className="flex gap-3 mt-6">
             <button
