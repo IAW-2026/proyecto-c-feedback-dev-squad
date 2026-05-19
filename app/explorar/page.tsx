@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { searchTargets } from '../actions'
 import SearchBar from '../../components/SearchBar'
@@ -18,6 +18,9 @@ export default function ExplorarPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const fetchIdRef = useRef(0)
+  const syncTimerRef = useRef<NodeJS.Timeout>()
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<TabValue>('all')
@@ -25,19 +28,14 @@ export default function ExplorarPage() {
   useEffect(() => {
     const syncFromUrl = () => {
       const sp = new URLSearchParams(window.location.search)
-      const p = Math.max(1, Number(sp.get('page')) || 1)
-      const q = sp.get('q') || ''
-      const t = (sp.get('tab') as TabValue) || 'all'
-      setPage(p)
-      setSearch(q)
-      setTab(t)
-      const params = new URLSearchParams()
-      params.set('page', String(p))
-      if (q) params.set('q', q)
-      if (t !== 'all') params.set('tab', t)
-      router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false })
+      setPage(Math.max(1, Number(sp.get('page')) || 1))
+      setSearch(sp.get('q') || '')
+      setTab((sp.get('tab') as TabValue) || 'all')
     }
     syncFromUrl()
+    if (!window.location.search) {
+      router.replace(`${pathname}?page=1`, { scroll: false })
+    }
     window.addEventListener('popstate', syncFromUrl)
     return () => window.removeEventListener('popstate', syncFromUrl)
   }, [router, pathname])
@@ -47,15 +45,17 @@ export default function ExplorarPage() {
       setLoading(true)
       setError('')
       try {
+        const fetchId = ++fetchIdRef.current
         const result = await searchTargets(search, tab === 'all' ? undefined : tab, page, 10)
-        if (page > result.totalPages) {
+        if (fetchId !== fetchIdRef.current) return
+        if (page > result.totalPages && page > 1) {
           updateParams({ page: '1' })
           return
         }
         setData(result)
+        setLoading(false)
       } catch {
         setError('Error al cargar los resultados.')
-      } finally {
         setLoading(false)
       }
     }
@@ -68,7 +68,11 @@ export default function ExplorarPage() {
     if (q) params.set('q', q)
     if (t !== 'all') params.set('tab', t)
     const qs = params.toString()
-    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+    clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(
+      () => router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false }),
+      50,
+    )
   }
 
   const updateParams = (updates: Record<string, string | undefined>) => {

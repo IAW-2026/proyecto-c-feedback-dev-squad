@@ -30,6 +30,7 @@
 - Navegación pública de productos y vendedores con búsqueda y filtros
 - Estadísticas de reseñas con distribución de puntuaciones
 - Resumen de reseñas generado por IA
+- Moderación de reseñas por IA"
 
 ---
 
@@ -97,9 +98,9 @@ El rol de administrador se gestiona localmente en la base de datos:
 | `/dashboard/crear-resena` | Autenticado | Crear reseña |
 | `/dashboard/mis-resenas` | Autenticado | Historial de reseñas |
 | `/admin/reportes` | Admin | Moderación de reportes |
-| `/explorar` | Público | Explorar reseñas (tabs + búsqueda) |
-| `/explorar/producto/[id]` | Público | Reseñas de un producto |
-| `/explorar/vendedor/[id]` | Público | Reseñas de un vendedor |
+| `/explorar` | Autenticado | Explorar reseñas (tabs + búsqueda) |
+| `/explorar/producto/[id]` | Autenticado | Reseñas de un producto |
+| `/explorar/vendedor/[id]` | Autenticado | Reseñas de un vendedor |
 
 ---
 

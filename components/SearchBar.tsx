@@ -23,7 +23,7 @@ export default function SearchBar({ onSearch, placeholder = 'Buscar...', default
       initialRef.current = false
       return
     }
-    const timer = setTimeout(() => onSearchRef.current(value), 300)
+    const timer = setTimeout(() => onSearchRef.current(value), 500)
     return () => clearTimeout(timer)
   }, [value])
 
