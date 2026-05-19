@@ -17,6 +17,7 @@ interface Props {
 }
 
 export default function CustomSelect({ label, options, value, onChange, placeholder, pageSize = 4 }: Props) {
+  const size = Math.max(1, pageSize)
   const [isOpen, setIsOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [highlighted, setHighlighted] = useState(-1)
@@ -25,8 +26,8 @@ export default function CustomSelect({ label, options, value, onChange, placehol
   const triggerRef = useRef<HTMLButtonElement>(null)
   const labelId = useId()
 
-  const totalPages = Math.max(1, Math.ceil(options.length / pageSize))
-  const paginatedOptions = options.slice((page - 1) * pageSize, page * pageSize)
+  const totalPages = Math.max(1, Math.ceil(options.length / size))
+  const paginatedOptions = options.slice((page - 1) * size, page * size)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -62,7 +63,7 @@ export default function CustomSelect({ label, options, value, onChange, placehol
         const nextIdx = highlighted + 1
         if (nextIdx >= options.length) break
         setHighlighted(nextIdx)
-        if (nextIdx >= page * pageSize) setPage(p => p + 1)
+        if (nextIdx >= page * size) setPage(p => p + 1)
         break
       case 'ArrowUp':
         e.preventDefault()
@@ -70,7 +71,7 @@ export default function CustomSelect({ label, options, value, onChange, placehol
         const prevIdx = highlighted - 1
         if (prevIdx < 0) break
         setHighlighted(prevIdx)
-        if (prevIdx < (page - 1) * pageSize) setPage(p => p - 1)
+        if (prevIdx < (page - 1) * size) setPage(p => p - 1)
         break
       case 'Enter':
       case ' ':
@@ -139,7 +140,7 @@ export default function CustomSelect({ label, options, value, onChange, placehol
             className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-y-auto max-h-60"
           >
             {paginatedOptions.map((opt, idx) => {
-              const realIdx = (page - 1) * pageSize + idx
+              const realIdx = (page - 1) * size + idx
               return (
                 <li
                   key={opt.id}

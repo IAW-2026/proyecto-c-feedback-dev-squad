@@ -16,6 +16,7 @@ import type {
 
 import {
   getMyReviews as dbGetMyReviews,
+  getReviewById as dbGetReviewById,
   createReview as dbCreateReview,
   updateReview as dbUpdateReview,
   deleteReview as dbDeleteReview,
@@ -31,7 +32,7 @@ import {
   resolveTargetName,
 } from '../services/db'
 
-import { getAIOpinion, generateReviewSummary } from '../lib/gemini'
+import { getAIOpinion, generateReviewSummary, moderateReview } from '../lib/gemini'
 import { getUserPurchases as dbGetUserPurchases } from '../services/purchases'
 
 export async function getMyReviews(
@@ -45,19 +46,57 @@ export async function createReview(
   input: CreateReviewInput,
   _userId: string,
   userName: string,
-): Promise<Review> {
+): Promise<Review & { moderationSkipped?: boolean }> {
   const { userId } = await auth()
   if (!userId) throw new Error('No autenticado')
-  return dbCreateReview(input, userId, userName ?? 'Usuario')
+
+  let moderationSkipped = false
+  try {
+    const moderation = await moderateReview(input)
+    if (!moderation.approved) {
+      throw new Error(`No aprobada: ${moderation.reason}`)
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith('No aprobada:')) {
+      throw e
+    }
+    console.error('Error en moderación IA, se permite la reseña:', e)
+    moderationSkipped = true
+  }
+
+  const review = await dbCreateReview(input, userId, userName ?? 'Usuario')
+  return Object.assign(review, { moderationSkipped })
 }
 
 export async function updateReview(
   id: string,
   input: UpdateReviewInput,
-): Promise<Review | null> {
+): Promise<{ review: Review | null; moderationSkipped?: boolean }> {
   const { userId } = await auth()
   if (!userId) throw new Error('No autenticado')
-  return dbUpdateReview(id, input, userId)
+
+  let moderationSkipped = false
+  const existing = await dbGetReviewById(id)
+  if (existing) {
+    try {
+      const moderation = await moderateReview({
+        tipo: existing.tipo,
+        targetId: existing.targetId,
+        rating: input.rating,
+        comentario: input.comentario,
+      })
+      if (!moderation.approved) {
+        throw new Error(`No aprobada: ${moderation.reason}`)
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('No aprobada:')) throw e
+      console.error('Error en moderación IA al editar, se permite:', e)
+      moderationSkipped = true
+    }
+  }
+
+  const review = await dbUpdateReview(id, input, userId)
+  return { review, moderationSkipped }
 }
 
 export async function deleteReview(id: string): Promise<Review | null> {
