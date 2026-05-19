@@ -97,7 +97,7 @@ export default function ExplorarPage() {
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
           Explorar Reseñas
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
           Buscá un producto o vendedor para ver sus reseñas
         </p>
 

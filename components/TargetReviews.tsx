@@ -176,7 +176,7 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
             <div className="flex items-start gap-3">
               <span className="text-2xl shrink-0" aria-hidden="true">🤖</span>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Resumen general de reseñas</h3>
+                <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Resumen general de reseñas</h2>
 
                 {!aiSummaryLoading && !aiSummary && !aiSummaryError && (
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
@@ -274,7 +274,7 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
               placeholder="Escribí el motivo..."
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none"
             />
-            <p className="text-xs text-gray-400 mb-1 text-right">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-right">
               {reportModal.razon.length}/200 caracteres (mín. 10)
             </p>
 

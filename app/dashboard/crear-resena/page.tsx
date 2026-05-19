@@ -1,17 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useAuth, useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ReviewForm from '../../../components/ReviewForm'
 import ReviewCard from '../../../components/ReviewCard'
 import { createReview, getMyReviews, getUserPurchasableTargets } from '../../actions'
 import type { CreateReviewInput, Review } from '../../../types'
 
 export default function CrearResenaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-8rem)] flex items-center justify-center text-gray-500">Cargando...</div>}>
+      <CrearResenaForm />
+    </Suspense>
+  )
+}
+
+function CrearResenaForm() {
   const { userId } = useAuth()
   const { user } = useUser()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const rawTipo = searchParams.get('tipo')
+  const tipoParam = (rawTipo === 'product' || rawTipo === 'seller') ? rawTipo : null
+  const targetIdParam = searchParams.get('id') || ''
+
+  const updateURL = (updates: Record<string, string | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
+
   const [loading, setLoading] = useState(false)
   const [createdReview, setCreatedReview] = useState<Review | null>(null)
   const [error, setError] = useState('')
@@ -89,7 +113,18 @@ export default function CrearResenaPage() {
           </p>
         )}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <ReviewForm onSubmit={handleSubmit} loading={loading} excludeIds={reviewedIds} purchasableProductIds={purchasableProductIds} purchasableSellerIds={purchasableSellerIds} />
+          <ReviewForm
+            key={searchParams.toString() || 'default'}
+            onSubmit={handleSubmit}
+            loading={loading}
+            excludeIds={reviewedIds}
+            purchasableProductIds={purchasableProductIds}
+            purchasableSellerIds={purchasableSellerIds}
+            tipo={tipoParam}
+            targetId={targetIdParam}
+            onTipoChange={(t) => updateURL({ tipo: t ?? undefined, id: undefined })}
+            onTargetChange={(id) => updateURL({ id })}
+          />
         </div>
       </div>
     </main>
