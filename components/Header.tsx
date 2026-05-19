@@ -94,18 +94,12 @@ export default function Header() {
                <Link href="/" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
                  Inicio
                </Link>
-               <button
-                  onClick={() => {
-                    if (!isSignedIn) {
-                      window.location.href = '/sign-in'
-                    } else {
-                      window.location.href = '/explorar'
-                    }
-                  }}
+                <Link
+                  href={isSignedIn ? '/explorar' : '/sign-in'}
                   className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
                   Explorar
-                </button>
+                </Link>
                <div className="relative" ref={dashboardDropdownRef}>
                  <button
                    onClick={handleDashboardClick}
