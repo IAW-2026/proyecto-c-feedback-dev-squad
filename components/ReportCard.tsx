@@ -95,9 +95,9 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+          <h2 className="font-semibold text-gray-900 dark:text-white">
             Reporte de {report.reporterName ?? 'Usuario'}
-          </h3>
+          </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {new Date(report.fecha).toLocaleDateString('es-ES', {
               year: 'numeric',
@@ -123,7 +123,7 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
         <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
           Motivo del reporte
         </p>
-        <p className="text-sm text-red-600 dark:text-red-400">
+        <p className="text-sm text-red-700 dark:text-red-400">
           {report.razon}
         </p>
       </div>
@@ -137,7 +137,7 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
             <span className="text-sm font-medium text-gray-900 dark:text-white">
               {report.review.userName ?? 'Usuario'}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {new Date(report.review.fecha).toLocaleDateString('es-ES')}
             </span>
           </div>
@@ -150,7 +150,7 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
           <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
             &ldquo;{report.review.comentario}&rdquo;
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {report.review.targetName ?? (report.review.tipo === 'product' ? 'Producto' : 'Vendedor')}
           </p>
         </div>
@@ -177,14 +177,14 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
             <button
               onClick={() => handleOpenModal('dismiss')}
               disabled={resolving}
-              className="flex-1 min-w-[120px] py-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+              className="flex-1 min-w-[120px] py-3 sm:py-2 bg-green-800 text-white rounded-lg hover:bg-green-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
             >
               Desestimar reporte
             </button>
             <button
               onClick={() => handleOpenModal('remove')}
               disabled={resolving}
-              className="flex-1 min-w-[120px] py-3 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+              className="flex-1 min-w-[120px] py-3 sm:py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
             >
               Eliminar reseña
             </button>
@@ -263,7 +263,7 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
                 onClick={handleConfirm}
                 disabled={resolving}
                 className={`flex-1 py-3 sm:py-2 rounded-lg text-white font-medium text-sm disabled:opacity-50 transition-colors ${
-                  selectedAction === 'dismiss' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                  selectedAction === 'dismiss' ? 'bg-green-800 hover:bg-green-900' : 'bg-red-700 hover:bg-red-800'
                 }`}
               >
                 {resolving ? 'Procesando...' : 'Confirmar'}

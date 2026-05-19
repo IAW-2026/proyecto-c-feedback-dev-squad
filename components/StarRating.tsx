@@ -43,7 +43,6 @@ export default function StarRating({ rating, onChange, size = 'md' }: Props) {
             }
           }}
           aria-label={`${starValue} estrella${starValue !== 1 ? 's' : ''}`}
-          aria-checked={onChange ? starValue <= rating : undefined}
           className={`${star} ${onChange ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
         >
           <svg viewBox="0 0 24 24" fill={starValue <= displayRating ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" className={starValue <= displayRating ? 'text-yellow-400' : 'text-gray-400 dark:text-gray-600'}>

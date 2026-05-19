@@ -11,11 +11,15 @@ interface Props {
   excludeIds?: string[]
   purchasableProductIds?: string[]
   purchasableSellerIds?: string[]
+  tipo?: ReviewType | null
+  targetId?: string
+  onTipoChange?: (tipo: ReviewType | null) => void
+  onTargetChange?: (targetId: string) => void
 }
 
-export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableProductIds, purchasableSellerIds }: Props) {
-  const [tipo, setTipo] = useState<ReviewType | null>(null)
-  const [targetId, setTargetId] = useState('')
+export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableProductIds, purchasableSellerIds, tipo: initialTipo, targetId: initialTargetId, onTipoChange, onTargetChange }: Props) {
+  const [tipo, setTipo] = useState<ReviewType | null>(initialTipo ?? null)
+  const [targetId, setTargetId] = useState(initialTargetId ?? '')
   const [rating, setRating] = useState(0)
   const [comentario, setComentario] = useState('')
   const [error, setError] = useState('')
@@ -26,12 +30,18 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
     { id: 'p3', name: 'Puma RS-X', sellerName: 'Urban Kicks' },
     { id: 'p4', name: 'Converse Chuck Taylor', sellerName: 'Sneakers Store' },
     { id: 'p5', name: 'Vans Old Skool', sellerName: 'Zapatería Deportiva SRL' },
+    { id: 'p6', name: 'New Balance 574', sellerName: 'Sneakers Store' },
+    { id: 'p7', name: 'Reebok Classic Leather', sellerName: 'Zapatería Deportiva SRL' },
+    { id: 'p8', name: 'Skechers Go Walk', sellerName: 'Urban Kicks' },
+    { id: 'p9', name: 'Under Armour HOVR', sellerName: 'Sneakers Store' },
+    { id: 'p10', name: 'Fila Disruptor', sellerName: 'Fashion Shoes' },
   ]
 
   const mockSellers = [
     { id: 's1', name: 'Zapatería Deportiva SRL' },
     { id: 's2', name: 'Sneakers Store' },
     { id: 's3', name: 'Urban Kicks' },
+    { id: 's4', name: 'Fashion Shoes' },
   ]
 
   const availableProducts = mockProducts.filter(p =>
@@ -43,9 +53,21 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
     && (purchasableSellerIds === undefined || purchasableSellerIds.includes(s.id))
   )
 
+  const handleTipoChange = (newTipo: ReviewType | null) => {
+    setTipo(newTipo)
+    if (newTipo === null) {
+      setTargetId('')
+    }
+    onTipoChange?.(newTipo)
+  }
+
+  const handleTargetChange = (newTargetId: string) => {
+    setTargetId(newTargetId)
+    onTargetChange?.(newTargetId)
+  }
+
   const reset = () => {
-    setTipo(null)
-    setTargetId('')
+    handleTipoChange(null)
     setRating(0)
     setComentario('')
     setError('')
@@ -92,13 +114,13 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
         </h2>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <button
-            onClick={() => setTipo('product')}
+            onClick={() => handleTipoChange('product')}
             className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-lg"
           >
             Reseñar Producto
           </button>
           <button
-            onClick={() => setTipo('seller')}
+            onClick={() => handleTipoChange('seller')}
             className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-lg"
           >
             Reseñar Vendedor
@@ -113,7 +135,7 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
       <button
         type="button"
         onClick={reset}
-        className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-200 transition-colors"
       >
         &larr; Cambiar tipo de reseña
       </button>
@@ -127,7 +149,7 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
           label={tipo === 'product' ? 'Producto' : 'Vendedor'}
           options={tipo === 'product' ? availableProducts : availableSellers}
           value={targetId}
-          onChange={setTargetId}
+          onChange={handleTargetChange}
           placeholder={tipo === 'product' ? 'Seleccionar producto...' : 'Seleccionar vendedor...'}
         />
       )}
@@ -152,7 +174,7 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
           maxLength={200}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none"
         />
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           {comentario.length}/200 caracteres (mín. 10)
         </p>
       </div>

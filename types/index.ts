@@ -80,7 +80,7 @@ export interface TopItem {
 
 export interface HomeStats {
   totalReviews: number
-  reviewsThisMonth: number
+  reviewsThisYear: number
   topProduct: TopItem | null
   topSeller: TopItem | null
   topReviewed: TopItem | null

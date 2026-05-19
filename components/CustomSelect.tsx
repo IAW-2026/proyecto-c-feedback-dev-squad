@@ -13,15 +13,20 @@ interface Props {
   value: string
   onChange: (value: string) => void
   placeholder: string
+  pageSize?: number
 }
 
-export default function CustomSelect({ label, options, value, onChange, placeholder }: Props) {
+export default function CustomSelect({ label, options, value, onChange, placeholder, pageSize = 4 }: Props) {
   const [isOpen, setIsOpen] = useState(false)
+  const [page, setPage] = useState(1)
   const [highlighted, setHighlighted] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const labelId = useId()
+
+  const totalPages = Math.max(1, Math.ceil(options.length / pageSize))
+  const paginatedOptions = options.slice((page - 1) * pageSize, page * pageSize)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -38,10 +43,13 @@ export default function CustomSelect({ label, options, value, onChange, placehol
       const selected = listRef.current.querySelector(`[data-value="${value}"]`)
       selected?.scrollIntoView({ block: 'nearest' })
     }
-  }, [isOpen, value])
+  }, [isOpen, value, page])
 
   useEffect(() => {
-    if (!isOpen) setHighlighted(-1)
+    if (!isOpen) {
+      setHighlighted(-1)
+      setPage(1)
+    }
   }, [isOpen])
 
   const selectedOption = options.find(o => o.id === value)
@@ -51,12 +59,18 @@ export default function CustomSelect({ label, options, value, onChange, placehol
       case 'ArrowDown':
         e.preventDefault()
         if (!isOpen) { setIsOpen(true); return }
-        setHighlighted(prev => (prev + 1) % options.length)
+        const nextIdx = highlighted + 1
+        if (nextIdx >= options.length) break
+        setHighlighted(nextIdx)
+        if (nextIdx >= page * pageSize) setPage(p => p + 1)
         break
       case 'ArrowUp':
         e.preventDefault()
         if (!isOpen) { setIsOpen(true); return }
-        setHighlighted(prev => (prev <= 0 ? options.length - 1 : prev - 1))
+        const prevIdx = highlighted - 1
+        if (prevIdx < 0) break
+        setHighlighted(prevIdx)
+        if (prevIdx < (page - 1) * pageSize) setPage(p => p - 1)
         break
       case 'Enter':
       case ' ':
@@ -75,10 +89,12 @@ export default function CustomSelect({ label, options, value, onChange, placehol
       case 'Home':
         e.preventDefault()
         setHighlighted(0)
+        setPage(1)
         break
       case 'End':
         e.preventDefault()
         setHighlighted(options.length - 1)
+        setPage(totalPages)
         break
     }
   }
@@ -122,29 +138,57 @@ export default function CustomSelect({ label, options, value, onChange, placehol
             aria-labelledby={labelId}
             className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg overflow-y-auto max-h-60"
           >
-            {options.map((opt, idx) => (
-              <li
-                key={opt.id}
-                role="option"
-                aria-selected={opt.id === value}
-                data-value={opt.id}
-              >
+            {paginatedOptions.map((opt, idx) => {
+              const realIdx = (page - 1) * pageSize + idx
+              return (
+                <li
+                  key={opt.id}
+                  role="option"
+                  aria-selected={opt.id === value}
+                  data-value={opt.id}
+                >
+                  <button
+                    type="button"
+                    onClick={() => { onChange(opt.id); setIsOpen(false) }}
+                    onMouseEnter={() => setHighlighted(realIdx)}
+                    className={`w-full text-left px-4 py-3 sm:py-2.5 transition-colors cursor-pointer ${
+                      realIdx === highlighted
+                        ? 'bg-blue-100 dark:bg-blue-800/40'
+                        : opt.id === value
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
+                          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {opt.name}
+                  </button>
+                </li>
+              )
+            })}
+            {totalPages > 1 && (
+              <li className="flex items-center justify-between px-3 py-2 border-t border-gray-200 dark:border-gray-600">
                 <button
                   type="button"
-                  onClick={() => { onChange(opt.id); setIsOpen(false) }}
-                  onMouseEnter={() => setHighlighted(idx)}
-                  className={`w-full text-left px-4 py-3 sm:py-2.5 transition-colors cursor-pointer ${
-                    idx === highlighted
-                      ? 'bg-blue-100 dark:bg-blue-800/40'
-                      : opt.id === value
-                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'
-                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
-                  }`}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {opt.name}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{page}/{totalPages}</span>
+                <button
+                  type="button"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </li>
-            ))}
+            )}
           </ul>
         )}
       </div>

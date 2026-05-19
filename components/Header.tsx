@@ -78,7 +78,7 @@ export default function Header() {
           <div className="grid grid-cols-3 items-center h-14 md:h-16">
             <div className="col-start-1 flex items-center">
               <Link href="/" className="flex items-center gap-2">
-                <img src="/icon.png" alt="ZapasYA" className="w-6 h-6 md:w-8 md:h-8 shrink-0" />
+                <img src="/icon.png" alt="ZapasYA" className="w-6 h-6 md:w-8 md:h-8 shrink-0 object-contain" />
                 <span className="md:hidden text-base font-bold leading-none text-blue-600 dark:text-blue-400">Feedback</span>
                 <div className="hidden md:flex md:flex-col">
                   <div className="flex items-baseline">

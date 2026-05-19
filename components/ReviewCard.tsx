@@ -58,9 +58,9 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
     <article className="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-300 dark:border-gray-700 p-6 transition-all hover:shadow-md">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white">
+          <p className="font-semibold text-gray-900 dark:text-white">
             {review.userName ?? 'Usuario'}
-          </h3>
+          </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {new Date(review.fecha).toLocaleDateString('es-ES', {
               year: 'numeric',
@@ -109,7 +109,7 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
             </label>
             <div className="flex items-center gap-2">
               <StarRating rating={editRating} onChange={setEditRating} size="md" />
-          <span className="text-sm text-gray-500 dark:text-gray-500">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
             ({editRating}/5)
           </span>
             </div>
@@ -127,7 +127,7 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
               maxLength={200}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none"
             />
-            <p className="text-xs text-gray-400 mt-1">{editComentario.length}/200 caracteres</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{editComentario.length}/200 caracteres</p>
           </div>
 
           {editError && (
@@ -158,7 +158,7 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
               {review.targetName ?? (review.tipo === 'product' ? 'Producto' : 'Vendedor')}
             </span>
             {review.tipo === 'product' && review.sellerName && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Vendido por {review.sellerName}
               </p>
             )}
@@ -168,7 +168,7 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
         <>
           <div className="flex items-center gap-2 mb-2">
             <StarRating rating={review.rating} size="sm" />
-            <span className="text-sm text-gray-500 dark:text-gray-500">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               ({review.rating}/5)
             </span>
           </div>
@@ -183,7 +183,7 @@ export default function ReviewCard({ review, editable, reportable, onUpdate, onD
                 {review.targetName ?? (review.tipo === 'product' ? 'Producto' : 'Vendedor')}
               </span>
               {review.tipo === 'product' && review.sellerName && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Vendido por {review.sellerName}
                 </p>
               )}
