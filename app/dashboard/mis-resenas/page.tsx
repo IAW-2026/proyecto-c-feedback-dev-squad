@@ -17,6 +17,7 @@ export default function MisResenasPage() {
   const [data, setData] = useState<PaginatedResponse<Review>>({ data: [], total: 0, page: 1, limit: 6, totalPages: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [moderationWarning, setModerationWarning] = useState('')
 
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -89,7 +90,17 @@ export default function MisResenasPage() {
 
   const handleEdit = async (id: string, input: UpdateReviewInput) => {
     if (!userId) return
-    await updateReview(id, input)
+    setModerationWarning('')
+    try {
+      const { moderationSkipped } = await updateReview(id, input)
+      if (moderationSkipped) {
+        setModerationWarning('La reseña se editó, pero la moderación por IA no estuvo disponible.')
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('No aprobada:')) {
+        throw e
+      }
+    }
     const result = await getMyReviews(userId, {
       page,
       limit: 6,
@@ -153,6 +164,12 @@ export default function MisResenasPage() {
           <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/50 px-4 py-2 rounded-lg mb-4" role="alert">
             {error}
           </p>
+        )}
+
+        {moderationWarning && (
+          <div className="text-sm text-amber-700 dark:text-yellow-300 bg-amber-100 dark:bg-yellow-900/50 px-4 py-2 rounded-lg mb-4" role="alert">
+            {moderationWarning}
+          </div>
         )}
 
         {loading ? (

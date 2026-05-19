@@ -1,19 +1,43 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useAuth, useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import ReviewForm from '../../../components/ReviewForm'
 import ReviewCard from '../../../components/ReviewCard'
 import { createReview, getMyReviews, getUserPurchasableTargets } from '../../actions'
 import type { CreateReviewInput, Review } from '../../../types'
 
 export default function CrearResenaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-8rem)] flex items-center justify-center text-gray-500">Cargando...</div>}>
+      <CrearResenaForm />
+    </Suspense>
+  )
+}
+
+function CrearResenaForm() {
   const { userId } = useAuth()
   const { user } = useUser()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const rawTipo = searchParams.get('tipo')
+  const tipoParam = (rawTipo === 'product' || rawTipo === 'seller') ? rawTipo : null
+  const targetIdParam = searchParams.get('id') || ''
+
+  const updateURL = (updates: Record<string, string | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value)
+      else params.delete(key)
+    }
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
+
   const [loading, setLoading] = useState(false)
-  const [createdReview, setCreatedReview] = useState<Review | null>(null)
+  const [createdReview, setCreatedReview] = useState<Review & { moderationSkipped?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [reviewedIds, setReviewedIds] = useState<string[]>([])
   const [purchasableProductIds, setPurchasableProductIds] = useState<string[] | undefined>(undefined)
@@ -39,10 +63,10 @@ export default function CrearResenaPage() {
     setError('')
 
     try {
-      const review = await createReview(input, userId, user?.fullName ?? 'Usuario')
-      setCreatedReview(review)
-    } catch {
-      setError('Ocurrió un error al publicar la reseña.')
+      const created = await createReview(input, userId, user?.fullName ?? 'Usuario')
+      setCreatedReview(created)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ocurrió un error al publicar la reseña.')
     } finally {
       setLoading(false)
     }
@@ -57,6 +81,13 @@ export default function CrearResenaPage() {
               Reseña publicada correctamente
             </p>
           </div>
+          {createdReview.moderationSkipped && (
+            <div className="bg-amber-100 dark:bg-yellow-900/30 border border-amber-200 dark:border-yellow-800 rounded-xl p-4 mb-6 text-center" role="alert">
+              <p className="text-amber-700 dark:text-yellow-300 text-sm">
+                La reseña se publicó, pero la moderación por IA no estuvo disponible.
+              </p>
+            </div>
+          )}
           <ReviewCard review={createdReview} />
           <div className="flex gap-3 mt-6">
             <button
@@ -89,7 +120,18 @@ export default function CrearResenaPage() {
           </p>
         )}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <ReviewForm onSubmit={handleSubmit} loading={loading} excludeIds={reviewedIds} purchasableProductIds={purchasableProductIds} purchasableSellerIds={purchasableSellerIds} />
+          <ReviewForm
+            key={searchParams.toString() || 'default'}
+            onSubmit={handleSubmit}
+            loading={loading}
+            excludeIds={reviewedIds}
+            purchasableProductIds={purchasableProductIds}
+            purchasableSellerIds={purchasableSellerIds}
+            tipo={tipoParam}
+            targetId={targetIdParam}
+            onTipoChange={(t) => updateURL({ tipo: t ?? undefined, id: undefined })}
+            onTargetChange={(id) => updateURL({ id })}
+          />
         </div>
       </div>
     </main>

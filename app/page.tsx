@@ -60,8 +60,8 @@ async function HomeStatsSections() {
               </div>
             )}
             <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-1">+{stats.reviewsThisMonth}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Reseñas este mes</p>
+              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-1">+{stats.reviewsThisYear}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Reseñas este año</p>
             </div>
           </div>
         </div>

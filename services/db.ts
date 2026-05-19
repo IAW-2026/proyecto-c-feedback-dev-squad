@@ -413,19 +413,19 @@ export async function getSellerStats(targetId: string): Promise<ReviewStats> {
 
 export async function getHomeStats(): Promise<HomeStats> {
   const now = new Date()
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const firstDayOfYear = new Date(now.getFullYear(), 0, 1)
   const wherePublished = { estado: 'published' as const }
 
   const [
     totalReviews,
-    reviewsThisMonth,
+    reviewsThisYear,
     productGroups,
     sellerGroups,
     topReviewedRaw,
     latestReviewRaw,
   ] = await Promise.all([
     prisma.reseña.count({ where: wherePublished }),
-    prisma.reseña.count({ where: { ...wherePublished, fecha: { gte: firstDayOfMonth } } }),
+    prisma.reseña.count({ where: { ...wherePublished, fecha: { gte: firstDayOfYear } } }),
     prisma.reseña.groupBy({
       by: ['targetId'],
       where: { ...wherePublished, tipo: 'product' },
@@ -515,7 +515,7 @@ export async function getHomeStats(): Promise<HomeStats> {
 
   return {
     totalReviews,
-    reviewsThisMonth,
+    reviewsThisYear,
     topProduct,
     topSeller,
     topReviewed,
