@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getReports, resolveReport } from '../../actions'
 import ReportCard from '../../../components/ReportCard'
@@ -19,6 +19,9 @@ export default function ReportesPage() {
   const [resolving, setResolving] = useState<string | null>(null)
   const [error, setError] = useState('')
 
+  const fetchIdRef = useRef(0)
+  const syncTimerRef = useRef<NodeJS.Timeout>()
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [resolvedFilter, setResolvedFilter] = useState<ResolvedFilter>('all')
@@ -26,19 +29,14 @@ export default function ReportesPage() {
   useEffect(() => {
     const syncFromUrl = () => {
       const sp = new URLSearchParams(window.location.search)
-      const p = Math.max(1, Number(sp.get('page')) || 1)
-      const s = sp.get('search') || ''
-      const rf = (sp.get('estado') as ResolvedFilter) || 'all'
-      setPage(p)
-      setSearch(s)
-      setResolvedFilter(rf)
-      const params = new URLSearchParams()
-      params.set('page', String(p))
-      if (s) params.set('search', s)
-      if (rf !== 'all') params.set('estado', rf)
-      router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false })
+      setPage(Math.max(1, Number(sp.get('page')) || 1))
+      setSearch(sp.get('search') || '')
+      setResolvedFilter((sp.get('estado') as ResolvedFilter) || 'all')
     }
     syncFromUrl()
+    if (!window.location.search) {
+      router.replace(`${pathname}?page=1`, { scroll: false })
+    }
     window.addEventListener('popstate', syncFromUrl)
     return () => window.removeEventListener('popstate', syncFromUrl)
   }, [router, pathname])
@@ -49,15 +47,17 @@ export default function ReportesPage() {
       setError('')
       try {
         const resolvedParam = resolvedFilter === 'all' ? undefined : resolvedFilter === 'resolved'
+        const fetchId = ++fetchIdRef.current
         const result = await getReports({ page, limit: 5, search, resolved: resolvedParam })
-        if (page > result.totalPages) {
+        if (fetchId !== fetchIdRef.current) return
+        if (page > result.totalPages && page > 1) {
           updateParams({ page: '1' })
           return
         }
         setData(result)
+        setLoading(false)
       } catch {
         setError('Error al cargar los reportes.')
-      } finally {
         setLoading(false)
       }
     }
@@ -70,7 +70,11 @@ export default function ReportesPage() {
     if (s) params.set('search', s)
     if (rf !== 'all') params.set('estado', rf)
     const qs = params.toString()
-    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+    clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(
+      () => router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false }),
+      50,
+    )
   }
 
   const updateParams = (updates: Record<string, string | undefined>) => {
@@ -117,7 +121,7 @@ export default function ReportesPage() {
           <div className="flex-1">
             <SearchBar
               onSearch={q => updateParams({ search: q || undefined, page: '1' })}
-              placeholder="Buscar en reportes..."
+              placeholder="Buscar por motivo, reseña o autor..."
               defaultValue={search}
             />
           </div>

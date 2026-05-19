@@ -170,8 +170,23 @@ export async function getMyReviews(userId: string, params: PaginationParams): Pr
 
   if (params.search) {
     const q = params.search
+    const [matchingProducts, matchingSellers] = await Promise.all([
+      prisma.producto.findMany({
+        where: { nombre: { contains: q, mode: 'insensitive' } },
+        select: { id: true },
+      }),
+      prisma.vendedor.findMany({
+        where: { nombre: { contains: q, mode: 'insensitive' } },
+        select: { id: true },
+      }),
+    ])
+
+    const productIds = matchingProducts.map(p => p.id)
+    const sellerIds = matchingSellers.map(s => s.id)
+
     where.OR = [
-      { comentario: { contains: q, mode: 'insensitive' } },
+      { tipo: 'product', targetId: { in: productIds } },
+      { tipo: 'seller', targetId: { in: sellerIds } },
     ]
   }
 
