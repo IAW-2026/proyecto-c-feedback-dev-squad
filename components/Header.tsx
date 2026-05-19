@@ -63,7 +63,7 @@ export default function Header() {
 
   const navItems = [
     { href: '/', label: 'Inicio', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { href: '/explorar', label: 'Explorar', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
+    { href: '/explorar', label: 'Explorar', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', requireAuth: true },
     { href: '/dashboard/crear-resena', label: 'Crear', icon: 'M12 4v16m8-8H4', requireAuth: true },
     { href: '/dashboard/mis-resenas', label: 'Mis reseñas', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', requireAuth: true },
     { href: '/admin/reportes', label: 'Admin', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', requireAuth: true },
@@ -94,9 +94,18 @@ export default function Header() {
                <Link href="/" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
                  Inicio
                </Link>
-               <Link href="/explorar" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
-                 Explorar
-               </Link>
+               <button
+                  onClick={() => {
+                    if (!isSignedIn) {
+                      window.location.href = '/sign-in'
+                    } else {
+                      window.location.href = '/explorar'
+                    }
+                  }}
+                  className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+                >
+                  Explorar
+                </button>
                <div className="relative" ref={dashboardDropdownRef}>
                  <button
                    onClick={handleDashboardClick}

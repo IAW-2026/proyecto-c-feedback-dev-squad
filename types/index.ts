@@ -71,6 +71,30 @@ export interface ReviewStats {
   ratingDistribution: Record<number, number>
 }
 
+export interface TopItem {
+  id: string
+  nombre: string
+  averageRating: number
+  totalReviews: number
+}
+
+export interface HomeStats {
+  totalReviews: number
+  reviewsThisMonth: number
+  topProduct: TopItem | null
+  topSeller: TopItem | null
+  topReviewed: TopItem | null
+  latestReview: {
+    id: string
+    tipo: string
+    targetName: string
+    rating: number
+    comentario: string
+    userName: string
+    fecha: string
+  } | null
+}
+
 export interface PaginationParams {
   page: number
   limit: number

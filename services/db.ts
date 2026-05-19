@@ -5,6 +5,7 @@ import type {
   Review,
   Report,
   ReviewStats,
+  HomeStats,
   PaginationParams,
   PaginatedResponse,
   CreateReviewInput,
@@ -407,6 +408,118 @@ export async function getSellerStats(targetId: string): Promise<ReviewStats> {
     averageRating: Math.round((aggregate._avg.rating ?? 0) * 10) / 10,
     totalReviews: aggregate._count.id,
     ratingDistribution,
+  }
+}
+
+export async function getHomeStats(): Promise<HomeStats> {
+  const now = new Date()
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const wherePublished = { estado: 'published' as const }
+
+  const [
+    totalReviews,
+    reviewsThisMonth,
+    productGroups,
+    sellerGroups,
+    topReviewedRaw,
+    latestReviewRaw,
+  ] = await Promise.all([
+    prisma.reseña.count({ where: wherePublished }),
+    prisma.reseña.count({ where: { ...wherePublished, fecha: { gte: firstDayOfMonth } } }),
+    prisma.reseña.groupBy({
+      by: ['targetId'],
+      where: { ...wherePublished, tipo: 'product' },
+      _avg: { rating: true },
+      _count: { id: true },
+      orderBy: { _avg: { rating: 'desc' } },
+      take: 10,
+    }),
+    prisma.reseña.groupBy({
+      by: ['targetId'],
+      where: { ...wherePublished, tipo: 'seller' },
+      _avg: { rating: true },
+      _count: { id: true },
+      orderBy: { _avg: { rating: 'desc' } },
+      take: 10,
+    }),
+    prisma.reseña.groupBy({
+      by: ['targetId'],
+      where: { ...wherePublished, tipo: 'product' },
+      _count: { id: true },
+      _avg: { rating: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 1,
+    }),
+    prisma.reseña.findFirst({
+      where: wherePublished,
+      orderBy: { fecha: 'desc' },
+      include: { usuario: true },
+    }),
+  ])
+
+  const topProductEntry = productGroups.find(g => g._count.id >= 2) ?? productGroups[0] ?? null
+  let topProduct = null
+  if (topProductEntry) {
+    const product = await prisma.producto.findUnique({ where: { id: topProductEntry.targetId } })
+    if (product) {
+      topProduct = {
+        id: product.id,
+        nombre: product.nombre,
+        averageRating: Math.round((topProductEntry._avg.rating ?? 0) * 10) / 10,
+        totalReviews: topProductEntry._count.id,
+      }
+    }
+  }
+
+  const topSellerEntry = sellerGroups.find(g => g._count.id >= 2) ?? sellerGroups[0] ?? null
+  let topSeller = null
+  if (topSellerEntry) {
+    const seller = await prisma.vendedor.findUnique({ where: { id: topSellerEntry.targetId } })
+    if (seller) {
+      topSeller = {
+        id: seller.id,
+        nombre: seller.nombre,
+        averageRating: Math.round((topSellerEntry._avg.rating ?? 0) * 10) / 10,
+        totalReviews: topSellerEntry._count.id,
+      }
+    }
+  }
+
+  let topReviewed = null
+  if (topReviewedRaw.length > 0) {
+    const entry = topReviewedRaw[0]
+    const product = await prisma.producto.findUnique({ where: { id: entry.targetId } })
+    if (product) {
+      topReviewed = {
+        id: product.id,
+        nombre: product.nombre,
+        averageRating: Math.round((entry._avg.rating ?? 0) * 10) / 10,
+        totalReviews: entry._count.id,
+      }
+    }
+  }
+
+  let latestReview = null
+  if (latestReviewRaw) {
+    const resolved = await resolveTargetName(latestReviewRaw.tipo, latestReviewRaw.targetId)
+    latestReview = {
+      id: latestReviewRaw.id,
+      tipo: latestReviewRaw.tipo,
+      targetName: resolved.targetName,
+      rating: latestReviewRaw.rating,
+      comentario: latestReviewRaw.comentario,
+      userName: latestReviewRaw.usuario?.nombre ?? 'Usuario',
+      fecha: latestReviewRaw.fecha.toISOString(),
+    }
+  }
+
+  return {
+    totalReviews,
+    reviewsThisMonth,
+    topProduct,
+    topSeller,
+    topReviewed,
+    latestReview,
   }
 }
 
