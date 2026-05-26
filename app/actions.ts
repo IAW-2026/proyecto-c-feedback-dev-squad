@@ -39,12 +39,13 @@ export async function getMyReviews(
   userId: string,
   params: PaginationParams,
 ): Promise<PaginatedResponse<Review>> {
+  const { userId: authUserId } = await auth()
+  if (!authUserId || authUserId !== userId) throw new Error('No autorizado')
   return dbGetMyReviews(userId, params)
 }
 
 export async function createReview(
   input: CreateReviewInput,
-  _userId: string,
   userName: string,
 ): Promise<Review & { moderationSkipped?: boolean }> {
   const { userId } = await auth()
