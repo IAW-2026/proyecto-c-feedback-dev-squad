@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '../../../../../lib/prisma'
-import { ensureUser } from '../../../../../lib/ensureUser'
+import { createReport } from '../../../../../services/db'
 import { validateApiKey } from '../../../../../lib/validateApiKey'
 
 export async function POST(
@@ -14,17 +13,6 @@ export async function POST(
     const { id: reviewId } = await params
     if (!reviewId) {
       return NextResponse.json({ error: 'reviewId es requerido' }, { status: 400 })
-    }
-
-    const review = await prisma.reseña.findUnique({ where: { id: reviewId } })
-    if (!review) {
-      return NextResponse.json({ error: 'Review no encontrada' }, { status: 404 })
-    }
-    if (review.estado === 'removed') {
-      return NextResponse.json({ error: 'No se puede reportar una reseña eliminada' }, { status: 400 })
-    }
-    if (review.estado === 'reported') {
-      return NextResponse.json({ error: 'Esta reseña ya fue reportada' }, { status: 409 })
     }
 
     const body = await req.json()
@@ -43,50 +31,19 @@ export async function POST(
       return NextResponse.json({ error: 'reporterId es requerido' }, { status: 400 })
     }
 
-    await ensureUser(reporterId, reporterName)
-
-    const [report] = await Promise.all([
-      prisma.reporte.create({
-        data: {
-          reseñaId: reviewId,
-          reporterId,
-          razon,
-        },
-        include: {
-          reseña: { include: { usuario: true } },
-          reportero: true,
-        },
-      }),
-      prisma.reseña.update({
-        where: { id: reviewId },
-        data: { estado: 'reported' },
-      }),
-    ])
-
-    const result = {
-      id: report.id,
-      reseñaId: report.reseñaId,
-      reporterId: report.reporterId,
-      razon: report.razon,
-      resuelto: report.resuelto,
-      fecha: report.fecha,
-      review: report.reseña ? {
-        id: report.reseña.id,
-        tipo: report.reseña.tipo,
-        targetId: report.reseña.targetId,
-        userId: report.reseña.userId,
-        rating: report.reseña.rating,
-        comentario: report.reseña.comentario,
-        estado: report.reseña.estado,
-        fecha: report.reseña.fecha,
-        userName: report.reseña.usuario?.nombre,
-      } : undefined,
-      reporterName: report.reportero?.nombre,
-    }
-
-    return NextResponse.json(result, { status: 201 })
+    const report = await createReport({ reseñaId: reviewId, razon }, reporterId, reporterName)
+    return NextResponse.json(report, { status: 201 })
   } catch (error) {
     console.error('Error al reportar reseña:', error)
+    if (error instanceof Error) {
+      if (error.message === 'Review no encontrada') {
+        return NextResponse.json({ error: error.message }, { status: 404 })
+      }
+      if (error.message === 'Esta reseña ya fue reportada') {
+        return NextResponse.json({ error: error.message }, { status: 409 })
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

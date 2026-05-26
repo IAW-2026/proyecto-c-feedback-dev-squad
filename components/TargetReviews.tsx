@@ -8,6 +8,7 @@ import { getTargetReviewsAction, getTargetStatsAction, getTargetAISummaryAction,
 import ReviewCard from './ReviewCard'
 import StarRating from './StarRating'
 import Pagination from './Pagination'
+import ReportModal from './ReportModal'
 
 interface Props {
   targetId: string
@@ -29,10 +30,7 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
   const [error, setError] = useState('')
 
   const [page, setPage] = useState(1)
-
-  const [reportModal, setReportModal] = useState<{ open: boolean; reviewId: string; razon: string; submitting: boolean; error: string }>({
-    open: false, reviewId: '', razon: '', submitting: false, error: '',
-  })
+  const [reportReviewId, setReportReviewId] = useState<string | null>(null)
 
   useEffect(() => {
     const syncFromUrl = () => {
@@ -77,22 +75,14 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
   }, [fetchReviewsAndStats])
 
   const openReport = (reviewId: string) => {
-    setReportModal({ open: true, reviewId, razon: '', submitting: false, error: '' })
+    setReportReviewId(reviewId)
   }
 
-  const submitReport = async () => {
-    if (!reportModal.razon.trim()) {
-      setReportModal(prev => ({ ...prev, error: 'Debes escribir un motivo.' }))
-      return
-    }
-    setReportModal(prev => ({ ...prev, submitting: true, error: '' }))
-    try {
-      await reportReviewAction(reportModal.reviewId, reportModal.razon.trim())
-      setReportModal({ open: false, reviewId: '', razon: '', submitting: false, error: '' })
-      fetchReviewsAndStats()
-    } catch (e) {
-      setReportModal(prev => ({ ...prev, submitting: false, error: e instanceof Error ? e.message : 'Error al reportar.' }))
-    }
+  const handleReportSubmit = async (razon: string) => {
+    if (!reportReviewId) return
+    await reportReviewAction(reportReviewId, razon)
+    setReportReviewId(null)
+    fetchReviewsAndStats()
   }
 
   const handleAiSummary = async () => {
@@ -238,7 +228,7 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
             <>
               <div className="grid gap-4">
                 {reviews.data.map(review => (
-                  <ReviewCard key={review.id} review={review} reportable={!!userId} onReport={openReport} />
+                  <ReviewCard key={review.id} review={review} reportable={!!userId && review.userId !== userId} onReport={openReport} />
                 ))}
               </div>
               <Pagination page={page} totalPages={reviews.totalPages} onPageChange={p => {
@@ -252,55 +242,11 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
         </>
       )}
 
-      {reportModal.open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" onClick={() => setReportModal(prev => ({ ...prev, open: false }))} role="dialog" aria-modal="true" aria-labelledby="report-title">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <h3 id="report-title" className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Reportar reseña
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Indicá el motivo del reporte.
-            </p>
-
-            <label htmlFor="report-razon" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Motivo del reporte
-            </label>
-            <textarea
-              id="report-razon"
-              value={reportModal.razon}
-              onChange={e => setReportModal(prev => ({ ...prev, razon: e.target.value, error: '' }))}
-              rows={4}
-              maxLength={200}
-              placeholder="Escribí el motivo..."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors resize-none"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-right">
-              {reportModal.razon.length}/200 caracteres (mín. 10)
-            </p>
-
-            {reportModal.error && (
-              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/50 px-4 py-2 rounded-lg mb-4" role="alert">{reportModal.error}</p>
-            )}
-
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={submitReport}
-                disabled={reportModal.submitting || reportModal.razon.trim().length < 10}
-                className="flex-1 py-3 sm:py-2 rounded-lg text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-red-600 hover:bg-red-700"
-              >
-                {reportModal.submitting ? 'Enviando...' : 'Reportar'}
-              </button>
-              <button
-                onClick={() => setReportModal({ open: false, reviewId: '', razon: '', submitting: false, error: '' })}
-                disabled={reportModal.submitting}
-                className="flex-1 py-3 sm:py-2 rounded-lg font-medium text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReportModal
+        open={reportReviewId !== null}
+        onSubmit={handleReportSubmit}
+        onClose={() => setReportReviewId(null)}
+      />
     </div>
   )
 }

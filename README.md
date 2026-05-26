@@ -30,7 +30,7 @@
 - Navegación pública de productos y vendedores con búsqueda y filtros
 - Estadísticas de reseñas con distribución de puntuaciones
 - Resumen de reseñas generado por IA
-- Moderación de reseñas por IA"
+- Moderación de reseñas por IA
 
 ---
 
@@ -426,6 +426,7 @@ Reportar una reseña específica.
   "reporterName": "Carlos García",
   "razon": "Contenido inapropiado",
   "resuelto": false,
+  "adminComment": null,
   "fecha": "2026-05-07T19:30:00.000Z"
 }
 ```
@@ -524,7 +525,7 @@ Obtener estadísticas de reseñas de un vendedor.
 | `Producto` | Productos replicados desde Seller App |
 | `Vendedor` | Vendedores replicados desde Seller App |
 | `Reseña` | Reseñas de productos y vendedores |
-| `Reporte` | Reportes de reseñas con resolución por admin |
+| `Reporte` | Reportes de reseñas con resolución por admin y comentario opcional del admin |
 
 ### Relaciones
 

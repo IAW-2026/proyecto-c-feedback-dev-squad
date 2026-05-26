@@ -36,6 +36,14 @@ function CrearResenaForm() {
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
   }
 
+  const [formKey, setFormKey] = useState(0)
+
+  useEffect(() => {
+    const handlePopState = () => setFormKey(k => k + 1)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   const [loading, setLoading] = useState(false)
   const [createdReview, setCreatedReview] = useState<Review & { moderationSkipped?: boolean } | null>(null)
   const [error, setError] = useState('')
@@ -63,7 +71,7 @@ function CrearResenaForm() {
     setError('')
 
     try {
-      const created = await createReview(input, userId, user?.fullName ?? 'Usuario')
+      const created = await createReview(input, user?.fullName ?? 'Usuario')
       setCreatedReview(created)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ocurrió un error al publicar la reseña.')
@@ -121,7 +129,7 @@ function CrearResenaForm() {
         )}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <ReviewForm
-            key={searchParams.toString() || 'default'}
+            key={formKey}
             onSubmit={handleSubmit}
             loading={loading}
             excludeIds={reviewedIds}
