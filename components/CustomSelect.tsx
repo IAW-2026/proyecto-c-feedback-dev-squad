@@ -122,7 +122,8 @@ export default function CustomSelect({ label, options, value, onChange, placehol
         >
           <span>{value ? selectedOption?.name : placeholder}</span>
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            className="w-4 h-4 text-gray-400 transition-transform duration-200"
+            style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -55,6 +55,9 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
 
   const handleTipoChange = (newTipo: ReviewType | null) => {
     setTipo(newTipo)
+    setRating(0)
+    setComentario('')
+    setError('')
     if (newTipo === null) {
       setTargetId('')
     }
@@ -63,6 +66,9 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
 
   const handleTargetChange = (newTargetId: string) => {
     setTargetId(newTargetId)
+    setRating(0)
+    setComentario('')
+    setError('')
     onTargetChange?.(newTargetId)
   }
 
