@@ -1,9 +1,16 @@
 import Link from 'next/link'
 import { resolveTargetName } from '../../../../services/db'
 import TargetReviews from '../../../../components/TargetReviews'
+import type { Metadata } from 'next'
 
 interface Props {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
+  const { targetName } = await resolveTargetName('seller', id)
+  return { title: `${targetName} - Reseñas`, description: `Reseñas de ${targetName}` }
 }
 
 export default async function VendedorReviewsPage({ params }: Props) {
