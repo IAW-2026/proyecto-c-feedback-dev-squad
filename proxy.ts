@@ -7,15 +7,15 @@ export default clerkMiddleware(async (auth, req) => {
   const { isAuthenticated, redirectToSignIn, sessionClaims } = await auth()
   const pathname = req.nextUrl.pathname
 
+  if (!isAuthenticated && isProtectedRoute(req)) {
+    return redirectToSignIn()
+  }
+
   if (pathname === '/dashboard') {
     return Response.redirect(new URL('/dashboard/mis-resenas', req.url))
   }
   if (pathname === '/admin') {
     return Response.redirect(new URL('/admin/reportes', req.url))
-  }
-
-  if (!isAuthenticated && isProtectedRoute(req)) {
-    return redirectToSignIn()
   }
 
   if (isAuthenticated && pathname.startsWith('/admin')) {
