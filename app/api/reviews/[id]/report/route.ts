@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createReport } from '../../../../../services/db'
-import { validateApiKey } from '../../../../../lib/validateApiKey'
+import { validateApiKey } from '../../../../../services/validateApiKey'
 
 export async function POST(
   req: NextRequest,

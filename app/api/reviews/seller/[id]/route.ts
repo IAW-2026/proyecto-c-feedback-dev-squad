@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../../lib/prisma'
 import { getTargetReviews, getSellerStats } from '../../../../../services/db'
 import { generateReviewSummary } from '../../../../../lib/gemini'
-import { validateApiKey } from '../../../../../lib/validateApiKey'
+import { validateApiKey } from '../../../../../services/validateApiKey'
 
 export async function GET(
   req: NextRequest,
