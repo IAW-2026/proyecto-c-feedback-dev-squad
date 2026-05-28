@@ -1,7 +1,7 @@
 import type { Reseña, Reporte, Usuario } from '@prisma/client'
 
 import { prisma } from '../lib/prisma'
-import { ensureUser } from '../lib/ensureUser'
+import { ensureUser } from './ensureUser'
 import { getUserPurchases } from './purchases'
 import type {
   Review,

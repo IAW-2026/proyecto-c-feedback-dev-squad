@@ -38,10 +38,11 @@ export default function Error({
           >
             Intentar de nuevo
           </button>
-          <Link href="/">
-            <button className="px-8 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              Volver al Inicio
-            </button>
+          <Link
+            href="/"
+            className="inline-block px-8 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            Volver al Inicio
           </Link>
         </div>
       </div>

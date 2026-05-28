@@ -2,7 +2,7 @@
 
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { isAdmin } from '../services/db'
-import { ensureUser } from '../lib/ensureUser'
+import { ensureUser } from '../services/ensureUser'
 import type {
   Review,
   ReviewStats,

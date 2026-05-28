@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createReview as dbCreateReview } from '../../../../services/db'
-import { validateApiKey } from '../../../../lib/validateApiKey'
+import { validateApiKey } from '../../../../services/validateApiKey'
 
 function errorStatus(message: string): number {
   if (message.toLowerCase().includes('ya existe')) return 409

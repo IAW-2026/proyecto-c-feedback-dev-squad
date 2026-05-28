@@ -13,10 +13,11 @@ export default function NotFound() {
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
           Lo sentimos, la página que buscas no existe o ha sido movida.
         </p>
-        <Link href="/">
-          <button className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-            Volver al Inicio
-          </button>
+        <Link
+          href="/"
+          className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Volver al Inicio
         </Link>
       </div>
     </main>
