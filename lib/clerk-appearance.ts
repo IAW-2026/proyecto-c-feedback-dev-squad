@@ -1,6 +1,7 @@
-import type { Appearance } from '@clerk/nextjs/server'
+import type { ComponentProps } from 'react'
+import type { SignIn } from '@clerk/nextjs'
 
-export const clerkAppearance: Appearance = {
+export const clerkAppearance: ComponentProps<typeof SignIn>['appearance'] = {
   elements: {
     headerTitle: 'text-gray-900 dark:text-white text-2xl font-bold',
     headerSubtitle: 'text-gray-600 dark:text-gray-300',
