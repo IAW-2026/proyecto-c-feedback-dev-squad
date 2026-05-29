@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useId } from 'react'
 interface Option {
   id: string
   name: string
+  subtitle?: string
 }
 
 interface Props {
@@ -153,7 +154,7 @@ export default function CustomSelect({ label, options, value, onChange, placehol
                     type="button"
                     onClick={() => { onChange(opt.id); setIsOpen(false) }}
                     onMouseEnter={() => setHighlighted(realIdx)}
-                    className={`w-full text-left px-4 py-3 sm:py-2.5 transition-colors cursor-pointer ${
+                    className={`w-full text-left px-4 py-3 sm:py-2.5 transition-colors cursor-pointer overflow-hidden ${
                       realIdx === highlighted
                         ? 'bg-blue-100 dark:bg-blue-800/40'
                         : opt.id === value
@@ -161,7 +162,12 @@ export default function CustomSelect({ label, options, value, onChange, placehol
                           : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'
                     }`}
                   >
-                    {opt.name}
+                    <span className="block truncate">
+                      <span>{opt.name}</span>
+                      {opt.subtitle && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">· {opt.subtitle}</span>
+                      )}
+                    </span>
                   </button>
                 </li>
               )

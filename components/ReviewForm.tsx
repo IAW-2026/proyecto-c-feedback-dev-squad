@@ -153,7 +153,9 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
       ) : (
         <CustomSelect
           label={tipo === 'product' ? 'Producto' : 'Vendedor'}
-          options={tipo === 'product' ? availableProducts : availableSellers}
+          options={tipo === 'product'
+            ? availableProducts.map(p => ({ id: p.id, name: p.name, subtitle: `Vendido por ${p.sellerName}` }))
+            : availableSellers}
           value={targetId}
           onChange={handleTargetChange}
           placeholder={tipo === 'product' ? 'Seleccionar producto...' : 'Seleccionar vendedor...'}

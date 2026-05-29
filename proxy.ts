@@ -26,7 +26,7 @@ export default clerkMiddleware(async (auth, req) => {
 
     try {
       const user = await prisma.usuario.findUnique({ where: { id: userId } })
-      if (!user || user.role !== 'admin') {
+      if (!user || user.rol !== 'admin') {
         return Response.redirect(new URL('/?error=no_privileges', req.url))
       }
     } catch (error) {

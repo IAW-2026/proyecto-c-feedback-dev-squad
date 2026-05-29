@@ -117,7 +117,7 @@ export async function getReports(
 }
 
 interface ResolveOptions {
-  adminComment?: string
+  comentarioAdmin?: string
   action: 'dismiss' | 'remove'
 }
 
@@ -129,7 +129,7 @@ export async function resolveReport(
   if (!userId) throw new Error('No autenticado')
   const admin = await isAdmin(userId)
   if (!admin) throw new Error('No autorizado')
-  return dbResolveReport(id, { adminId: userId, adminComment: options.adminComment, action: options.action })
+  return dbResolveReport(id, { adminId: userId, comentarioAdmin: options.comentarioAdmin, action: options.action })
 }
 
 export async function getAIOpinionAction(reportId: string): Promise<string> {
@@ -241,7 +241,8 @@ export async function ensureUserAction(): Promise<void> {
   if (!clerkUser) return
   await ensureUser(
     clerkUser.id,
-    `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() || 'Usuario',
+    clerkUser.firstName?.trim() || 'Usuario',
+    clerkUser.lastName?.trim() || undefined,
     clerkUser.emailAddresses?.[0]?.emailAddress,
   )
 }

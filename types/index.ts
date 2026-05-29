@@ -4,8 +4,9 @@ export type ReviewStatus = 'published' | 'reported' | 'removed'
 export interface Usuario {
   id: string
   nombre: string
+  apellido?: string
   email?: string
-  role: string
+  rol: string
   fotoUrl?: string
 }
 
@@ -45,7 +46,7 @@ export interface Report {
   review?: Review
   reporterName?: string
   resolvedBy?: string
-  adminComment?: string
+  comentarioAdmin?: string
 }
 
 export interface CreateReviewInput {

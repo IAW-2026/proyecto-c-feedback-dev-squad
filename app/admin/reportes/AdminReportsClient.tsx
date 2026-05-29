@@ -98,7 +98,7 @@ export default function AdminReportsClient() {
     setResolving(reportId)
     try {
       await resolveReport(reportId, {
-        adminComment: comment,
+        comentarioAdmin: comment,
         action,
       })
       const resolvedParam = resolvedFilter === 'all' ? undefined : resolvedFilter === 'resolved'
