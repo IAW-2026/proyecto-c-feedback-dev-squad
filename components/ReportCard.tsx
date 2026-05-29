@@ -129,9 +129,9 @@ export default function ReportCard({ report, onResolve, resolving }: Props) {
             <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
               Resuelto por {report.resolvedBy}
             </p>
-            {report.adminComment && (
+            {report.comentarioAdmin && (
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                &ldquo;{report.adminComment}&rdquo;
+                &ldquo;{report.comentarioAdmin}&rdquo;
               </p>
             )}
           </div>

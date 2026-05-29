@@ -15,11 +15,18 @@ import type {
   CreateReportInput,
 } from '../types'
 
-type ReviewWithUser = Reseña & { usuario: Pick<Usuario, 'id' | 'nombre'> }
+type ReviewWithUser = Reseña & { usuario: Pick<Usuario, 'id' | 'nombre' | 'apellido'> }
 type ReportWithRelations = Reporte & {
-  reseña: Reseña & { usuario: Pick<Usuario, 'id' | 'nombre'> }
-  reportero: Pick<Usuario, 'id' | 'nombre'>
-  resolvedor?: Pick<Usuario, 'id' | 'nombre'> | null
+  reseña: Reseña & { usuario: Pick<Usuario, 'id' | 'nombre' | 'apellido'> }
+  reportero: Pick<Usuario, 'id' | 'nombre' | 'apellido'>
+  resolvedor?: Pick<Usuario, 'id' | 'nombre' | 'apellido'> | null
+}
+
+function formatUserName(u: { nombre: string; apellido?: string | null } | null | undefined): string {
+  if (!u) return 'Usuario'
+  const nombre = u.nombre || ''
+  if (u.apellido) return `${nombre} ${u.apellido}`.trim()
+  return nombre || 'Usuario'
 }
 
 const MAX_COMENTARIO_LENGTH = 200
@@ -34,7 +41,7 @@ function sanitizePagination(page: number, limit: number): { page: number; limit:
 
 interface ResolveOptions {
   adminId: string
-  adminComment?: string
+  comentarioAdmin?: string
   action: 'dismiss' | 'remove'
 }
 
@@ -100,7 +107,7 @@ function mapReview(r: ReviewWithUser): Review {
     comentario: r.comentario,
     estado: r.estado as Review['estado'],
     fecha: r.fecha.toISOString(),
-    userName: r.usuario?.nombre,
+    userName: formatUserName(r.usuario),
   }
 }
 
@@ -113,9 +120,9 @@ function mapReport(r: ReportWithRelations): Report {
     resuelto: r.resuelto,
     fecha: r.fecha.toISOString(),
     review: r.reseña ? mapReview({ ...r.reseña, usuario: r.reseña.usuario }) : undefined,
-    reporterName: r.reportero?.nombre,
-    resolvedBy: r.resolvedor?.nombre,
-    adminComment: r.adminComment ?? undefined,
+    reporterName: formatUserName(r.reportero),
+    resolvedBy: r.resolvedor ? formatUserName(r.resolvedor) : undefined,
+    comentarioAdmin: r.comentarioAdmin ?? undefined,
   }
 }
 
@@ -492,7 +499,7 @@ export async function getHomeStats(): Promise<HomeStats> {
       targetName: resolved.targetName,
       rating: latestReviewRaw.rating,
       comentario: latestReviewRaw.comentario,
-      userName: latestReviewRaw.usuario?.nombre ?? 'Usuario',
+      userName: formatUserName(latestReviewRaw.usuario),
       fecha: latestReviewRaw.fecha.toISOString(),
     }
   }
@@ -628,14 +635,14 @@ export async function resolveReport(id: string, options: ResolveOptions): Promis
   const report = await prisma.reporte.findUnique({ where: { id } })
   if (!report) return null
 
-  if (options.adminComment && options.adminComment.length > MAX_ADMIN_COMMENT_LENGTH) {
-    throw new Error(`adminComment no puede superar los ${MAX_ADMIN_COMMENT_LENGTH} caracteres`)
+  if (options.comentarioAdmin && options.comentarioAdmin.length > MAX_ADMIN_COMMENT_LENGTH) {
+    throw new Error(`comentarioAdmin no puede superar los ${MAX_ADMIN_COMMENT_LENGTH} caracteres`)
   }
 
   const updateData: Record<string, unknown> = {
     resuelto: true,
     resolvedBy: options.adminId,
-    adminComment: options.adminComment ?? null,
+    comentarioAdmin: options.comentarioAdmin ?? null,
   }
 
   if (options.action === 'remove') {
@@ -710,5 +717,5 @@ export async function searchSellers(query: string, page = 1, limit = 10): Promis
 export async function isAdmin(userId: string): Promise<boolean> {
   if (!userId) return false
   const user = await prisma.usuario.findUnique({ where: { id: userId } })
-  return user?.role === 'admin'
+  return user?.rol === 'admin'
 }

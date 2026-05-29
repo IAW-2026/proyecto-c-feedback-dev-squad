@@ -10,8 +10,9 @@ datasource db {
 model Usuario {
   id        String    @id
   nombre    String
+  apellido  String?
   email     String?
-  role      String    @default("user")
+  rol       String    @default("user")
   fotoUrl   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -61,6 +62,6 @@ model Reporte {
   resuelto     Boolean  @default(false)
   resolvedBy   String?
   resolvedor   Usuario? @relation("ReporteResuelto", fields: [resolvedBy], references: [id])
-  adminComment String?
+  comentarioAdmin String?
   fecha        DateTime @default(now())
 }

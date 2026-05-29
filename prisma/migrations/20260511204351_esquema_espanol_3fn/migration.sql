@@ -2,8 +2,9 @@
 CREATE TABLE "Usuario" (
     "id" TEXT NOT NULL,
     "nombre" TEXT NOT NULL,
+    "apellido" TEXT,
     "email" TEXT,
-    "role" TEXT NOT NULL DEFAULT 'user',
+    "rol" TEXT NOT NULL DEFAULT 'user',
     "fotoUrl" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -52,7 +53,7 @@ CREATE TABLE "Reporte" (
     "razon" TEXT NOT NULL,
     "resuelto" BOOLEAN NOT NULL DEFAULT false,
     "resolvedBy" TEXT,
-    "adminComment" TEXT,
+    "comentarioAdmin" TEXT,
     "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Reporte_pkey" PRIMARY KEY ("id")
