@@ -8,10 +8,10 @@
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
-| Administrador | `admin+clerktest@iaw.com` | `iawuser#` |
+| Administrador | `admin+clerk_test@iaw.com` | `iawuser#` |
 | Administrador | `zapasya.clerk@gmail.com` | `ZapasYa11@` |
 | Usuario | `userzapasya@proton.me` | `userZapasYa` |
-| Usuario | `user+clerktest@iaw.com` | `iawuser#` |
+| Usuario | `user+clerk_test@iaw.com` | `iawuser#` |
 
 ---
 
