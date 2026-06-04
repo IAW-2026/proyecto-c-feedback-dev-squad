@@ -26,9 +26,22 @@ export default clerkMiddleware(async (auth, req) => {
 
     try {
       const user = await prisma.usuario.findUnique({ where: { id: userId } })
-      if (!user || user.rol !== 'admin') {
-        return Response.redirect(new URL('/?error=no_privileges', req.url))
+
+      if (user && user.rol === 'admin') {
+        return
       }
+
+      const clerkRole = (sessionClaims as any)?.public_metadata?.role
+      if (clerkRole === 'admin') {
+        await prisma.usuario.upsert({
+          where: { id: userId },
+          update: { rol: 'admin' },
+          create: { id: userId, nombre: 'Admin', rol: 'admin' },
+        })
+        return
+      }
+
+      return Response.redirect(new URL('/?error=no_privileges', req.url))
     } catch (error) {
       console.error('Error checking admin role:', error)
       return Response.redirect(new URL('/?error=no_privileges', req.url))

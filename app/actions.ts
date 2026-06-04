@@ -239,10 +239,12 @@ export async function reportReviewAction(
 export async function ensureUserAction(): Promise<void> {
   const clerkUser = await currentUser()
   if (!clerkUser) return
+  const isClerkAdmin = (clerkUser.publicMetadata as any)?.role === 'admin'
   await ensureUser(
     clerkUser.id,
     clerkUser.firstName?.trim() || 'Usuario',
     clerkUser.lastName?.trim() || undefined,
     clerkUser.emailAddresses?.[0]?.emailAddress,
+    isClerkAdmin,
   )
 }

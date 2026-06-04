@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserButton, SignInButton, SignUpButton, ClerkLoading, useAuth } from "@clerk/nextjs";
+import { UserButton, SignInButton, SignUpButton, ClerkLoading, useAuth, useUser } from "@clerk/nextjs";
 import ThemeToggle from './ThemeToggle'
 
 export default function Header() {
   const { isSignedIn, isLoaded } = useAuth()
+  const { user } = useUser()
   const pathname = usePathname()
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(false)
@@ -44,6 +45,8 @@ export default function Header() {
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [])
+
+  const isAdmin = isLoaded && isSignedIn ? (user?.publicMetadata as any)?.role === 'admin' : false
 
   const handleDashboardClick = () => {
     if (!isSignedIn) {
@@ -123,26 +126,28 @@ export default function Header() {
                    </div>
                  )}
                </div>
-               <div className="relative" ref={adminDropdownRef}>
-                 <button
-                   onClick={handleAdminClick}
-                   aria-haspopup="true"
-                   aria-expanded={isAdminDropdownOpen}
-                   className="flex items-center gap-1 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
-                 >
-                   Admin
-                    <svg className={`w-4 h-4 transition-transform duration-200 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                 </button>
-                 {isSignedIn && isAdminDropdownOpen && (
-                   <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
-                     <Link href="/admin/reportes" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium" onClick={() => setIsAdminDropdownOpen(false)}>
-                       Reportes
-                     </Link>
-                   </div>
-                 )}
-               </div>
+               {isAdmin && (
+                 <div className="relative" ref={adminDropdownRef}>
+                  <button
+                    onClick={handleAdminClick}
+                    aria-haspopup="true"
+                    aria-expanded={isAdminDropdownOpen}
+                    className="flex items-center gap-1 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+                  >
+                    Admin
+                     <svg className={`w-4 h-4 transition-transform duration-200 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                     </svg>
+                  </button>
+                  {isSignedIn && isAdminDropdownOpen && (
+                    <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
+                      <Link href="/admin/reportes" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium" onClick={() => setIsAdminDropdownOpen(false)}>
+                        Reportes
+                      </Link>
+                    </div>
+                  )}
+                </div>
+               )}
              </nav>
 
              <div className="col-start-3 flex items-center justify-end space-x-4">
@@ -192,6 +197,7 @@ export default function Header() {
         <div className="flex items-center justify-around h-16">
           {navItems.map(item => {
             if (item.requireAuth && !isSignedIn) return null
+            if (item.href.startsWith('/admin') && !isAdmin) return null
             const active = isActive(item.href)
             return (
               <Link
