@@ -10,7 +10,7 @@ interface Props {
 
 const BTN_CLASSES =
   'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 ' +
-  'hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white ' +
+  'hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 ' +
   'font-medium shrink-0 whitespace-nowrap'
 
 export default function NavDropdown({ icon, label, isOpen, onToggle, children }: Props) {

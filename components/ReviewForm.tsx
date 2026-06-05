@@ -164,9 +164,8 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
             : availableSellers}
           value={targetId}
           onChange={handleTargetChange}
-          placeholder={tipo === 'product' ? 'Seleccionar producto...' : 'Seleccionar vendedor...'}
+          placeholder={tipo === 'product' ? 'Buscar producto...' : 'Buscar vendedor...'}
           searchable
-          searchPlaceholder={tipo === 'product' ? 'Buscar producto...' : 'Buscar vendedor...'}
         />
       )}
 

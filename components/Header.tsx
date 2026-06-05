@@ -84,7 +84,7 @@ export default function Header() {
           <div className="grid grid-cols-[auto_1fr_auto] items-center h-14 md:h-16">
             <div className="col-start-1 flex items-center">
               <Link href="/" className="flex items-center gap-2">
-                <img src="/icon.png" alt="ZapasYA" className="w-6 h-6 md:w-8 md:h-8 shrink-0 object-contain" />
+                <img src="/icon.webp" alt="ZapasYA" className="w-6 h-6 md:w-8 md:h-8 shrink-0 object-contain" />
                 <span className="md:hidden text-base font-bold leading-none text-blue-600 dark:text-blue-400">Feedback</span>
                 <div className="hidden md:flex md:flex-col">
                   <div className="flex items-baseline">
@@ -97,7 +97,7 @@ export default function Header() {
             </div>
 
               <nav aria-label="Navegación principal" className="col-start-2 hidden md:flex items-center justify-center gap-1 md:ml-6">
-                <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white font-medium shrink-0 whitespace-nowrap">
+                <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 font-medium shrink-0 whitespace-nowrap">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
@@ -105,7 +105,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href={isSignedIn ? '/explorar' : '/sign-in'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white font-medium shrink-0 whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 font-medium shrink-0 whitespace-nowrap"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
