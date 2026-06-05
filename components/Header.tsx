@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserButton, SignInButton, SignUpButton, ClerkLoading, useAuth } from "@clerk/nextjs";
+import { UserButton, SignInButton, SignUpButton, ClerkLoading, useAuth, useUser } from "@clerk/nextjs";
 import ThemeToggle from './ThemeToggle'
+import NavDropdown from './NavDropdown'
 
 export default function Header() {
   const { isSignedIn, isLoaded } = useAuth()
+  const { user } = useUser()
   const pathname = usePathname()
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(false)
@@ -45,6 +47,8 @@ export default function Header() {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [])
 
+  const isAdmin = isLoaded && isSignedIn ? (user?.publicMetadata as any)?.role === 'admin' : false
+
   const handleDashboardClick = () => {
     if (!isSignedIn) {
       window.location.href = '/sign-in'
@@ -69,13 +73,15 @@ export default function Header() {
     { href: '/admin/reportes', label: 'Admin', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', requireAuth: true },
   ]
 
+  const USER_ICON = 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'
+
   const isActive = (href: string) => pathname === href || (href !== '/' && pathname.startsWith(href))
 
   return (
     <>
       <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-3 items-center h-14 md:h-16">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center h-14 md:h-16">
             <div className="col-start-1 flex items-center">
               <Link href="/" className="flex items-center gap-2">
                 <img src="/icon.png" alt="ZapasYA" className="w-6 h-6 md:w-8 md:h-8 shrink-0 object-contain" />
@@ -90,59 +96,51 @@ export default function Header() {
               </Link>
             </div>
 
-             <nav aria-label="Navegación principal" className="col-start-2 hidden md:flex items-center justify-center space-x-8 md:ml-6">
-               <Link href="/" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
-                 Inicio
-               </Link>
+              <nav aria-label="Navegación principal" className="col-start-2 hidden md:flex items-center justify-center gap-1 md:ml-6">
+                <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white font-medium shrink-0 whitespace-nowrap">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  Inicio
+                </Link>
                 <Link
                   href={isSignedIn ? '/explorar' : '/sign-in'}
-                  className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white font-medium shrink-0 whitespace-nowrap"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   Explorar
                 </Link>
-               <div className="relative" ref={dashboardDropdownRef}>
-                 <button
-                   onClick={handleDashboardClick}
-                   aria-haspopup="true"
-                   aria-expanded={isDashboardDropdownOpen}
-                   className="flex items-center gap-1 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
-                 >
-                    Mi cuenta
-                     <svg className={`w-4 h-4 transition-transform duration-200 ${isDashboardDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                 </button>
-                 {isSignedIn && isDashboardDropdownOpen && (
-                   <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
-                     <Link href="/dashboard/crear-resena" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium" onClick={() => setIsDashboardDropdownOpen(false)}>
-                       Crear Reseña
-                     </Link>
-                     <Link href="/dashboard/mis-resenas" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium" onClick={() => setIsDashboardDropdownOpen(false)}>
-                       Mis Reseñas
-                     </Link>
-                   </div>
+                <div className="relative" ref={dashboardDropdownRef}>
+                    <NavDropdown
+                      icon={USER_ICON}
+                      label="Mi cuenta"
+                      isOpen={isDashboardDropdownOpen}
+                      onToggle={handleDashboardClick}
+                    >
+                      <Link href="/dashboard/crear-resena" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium" onClick={() => setIsDashboardDropdownOpen(false)}>
+                        Crear Reseña
+                      </Link>
+                      <Link href="/dashboard/mis-resenas" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium" onClick={() => setIsDashboardDropdownOpen(false)}>
+                        Mis Reseñas
+                      </Link>
+                  </NavDropdown>
+                  </div>
+                  {isAdmin && (
+                   <div className="relative" ref={adminDropdownRef}>
+                    <NavDropdown
+                      icon={navItems[4].icon}
+                      label="Admin"
+                      isOpen={isAdminDropdownOpen}
+                      onToggle={handleAdminClick}
+                    >
+                      <Link href="/admin/reportes" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium" onClick={() => setIsAdminDropdownOpen(false)}>
+                        Reportes
+                      </Link>
+                    </NavDropdown>
+                  </div>
                  )}
-               </div>
-               <div className="relative" ref={adminDropdownRef}>
-                 <button
-                   onClick={handleAdminClick}
-                   aria-haspopup="true"
-                   aria-expanded={isAdminDropdownOpen}
-                   className="flex items-center gap-1 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
-                 >
-                   Admin
-                    <svg className={`w-4 h-4 transition-transform duration-200 ${isAdminDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                 </button>
-                 {isSignedIn && isAdminDropdownOpen && (
-                   <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
-                     <Link href="/admin/reportes" className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium" onClick={() => setIsAdminDropdownOpen(false)}>
-                       Reportes
-                     </Link>
-                   </div>
-                 )}
-               </div>
              </nav>
 
              <div className="col-start-3 flex items-center justify-end space-x-4">
@@ -160,7 +158,7 @@ export default function Header() {
                         aria-label="Perfil"
                         aria-haspopup="true"
                         aria-expanded={isProfileDropdownOpen}
-                        className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
                       >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
@@ -169,13 +167,13 @@ export default function Header() {
                       {isProfileDropdownOpen && (
                         <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
                           <SignInButton mode="modal">
-                            <button className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
-                               Iniciar Sesión
-                             </button>
-                           </SignInButton>
-                           <SignUpButton mode="modal">
-                             <button className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
-                               Registrarse
+                            <button className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
+                                Iniciar Sesión
+                              </button>
+                            </SignInButton>
+                            <SignUpButton mode="modal">
+                              <button className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium">
+                                Registrarse
                             </button>
                           </SignUpButton>
                         </div>
@@ -192,12 +190,13 @@ export default function Header() {
         <div className="flex items-center justify-around h-16">
           {navItems.map(item => {
             if (item.requireAuth && !isSignedIn) return null
+            if (item.href.startsWith('/admin') && !isAdmin) return null
             const active = isActive(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-0.5 h-full px-3 min-w-[60px] transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 h-full px-3 min-w-[60px] ${
                   active
                     ? 'text-blue-600 dark:text-blue-400'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
