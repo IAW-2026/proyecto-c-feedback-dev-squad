@@ -138,7 +138,7 @@ export async function getAIOpinionAction(reportId: string): Promise<string> {
   return getAIOpinion(report)
 }
 
-export async function getUserPurchasableTargets(): Promise<{ productIds: string[]; sellerIds: string[] }> {
+export async function getUserPurchasableTargets() {
   const { userId } = await auth()
   if (!userId) throw new Error('No autenticado')
   return dbGetUserPurchases(userId)
