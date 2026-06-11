@@ -29,6 +29,7 @@ import {
   createReport as dbCreateReport,
   searchProducts as dbSearchProducts,
   searchSellers as dbSearchSellers,
+  searchAll as dbSearchAll,
   resolveTargetName,
 } from '../services/db'
 
@@ -138,7 +139,7 @@ export async function getAIOpinionAction(reportId: string): Promise<string> {
   return getAIOpinion(report)
 }
 
-export async function getUserPurchasableTargets(): Promise<{ productIds: string[]; sellerIds: string[] }> {
+export async function getUserPurchasableTargets() {
   const { userId } = await auth()
   if (!userId) throw new Error('No autenticado')
   return dbGetUserPurchases(userId)
@@ -178,25 +179,13 @@ export async function searchTargets(
     }
   }
 
-  const [products, sellers] = await Promise.all([
-    dbSearchProducts(query, 1, 999),
-    dbSearchSellers(query, 1, 999),
-  ])
-
-  const combined: SearchResult[] = [
-    ...products.data.map(p => ({ ...p, _tipo: 'product' as const })),
-    ...sellers.data.map(s => ({ ...s, _tipo: 'seller' as const, vendedorNombre: undefined })),
-  ]
-  combined.sort((a, b) => a.nombre.localeCompare(b.nombre))
-
-  const total = combined.length
-  const start = (page - 1) * limit
+  const result = await dbSearchAll(query, page, limit)
   return {
-    data: combined.slice(start, start + limit),
-    total,
+    data: result.data,
+    total: result.total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit),
+    totalPages: Math.ceil(result.total / limit),
   }
 }
 

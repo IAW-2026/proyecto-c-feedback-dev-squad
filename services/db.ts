@@ -714,6 +714,63 @@ export async function searchSellers(query: string, page = 1, limit = 10): Promis
   }
 }
 
+export async function searchAll(
+  query: string,
+  page = 1,
+  limit = 10,
+): Promise<{ data: { id: string; nombre: string; vendedorNombre?: string; _tipo: 'product' | 'seller' }[]; total: number }> {
+  const q = query.trim() ? `%${query}%` : '%'
+
+  interface RawRow {
+    id: string
+    nombre: string
+    vendedorNombre: string | null
+    _tipo: string
+  }
+
+  const [rows, countResult] = await Promise.all([
+    prisma.$queryRawUnsafe<RawRow[]>(
+      `SELECT p.id, p.nombre, v.nombre AS "vendedorNombre", 'product' AS "_tipo"
+       FROM "Producto" p
+       LEFT JOIN "Vendedor" v ON p."vendedorId" = v.id
+       WHERE p.nombre ILIKE $1
+
+       UNION ALL
+
+       SELECT s.id, s.nombre, NULL AS "vendedorNombre", 'seller' AS "_tipo"
+       FROM "Vendedor" s
+       WHERE s.nombre ILIKE $1
+
+       ORDER BY nombre
+       LIMIT $2 OFFSET $3`,
+      q,
+      limit,
+      (page - 1) * limit,
+    ),
+    prisma.$queryRawUnsafe<{ total: bigint }[]>(
+      `SELECT COUNT(*) AS total
+       FROM (
+         SELECT p.id FROM "Producto" p WHERE p.nombre ILIKE $1
+         UNION ALL
+         SELECT s.id FROM "Vendedor" s WHERE s.nombre ILIKE $1
+       ) combined`,
+      q,
+    ),
+  ])
+
+  const total = Number(countResult[0]?.total ?? 0)
+
+  return {
+    data: rows.map(r => ({
+      id: r.id,
+      nombre: r.nombre,
+      vendedorNombre: r.vendedorNombre ?? undefined,
+      _tipo: r._tipo as 'product' | 'seller',
+    })),
+    total,
+  }
+}
+
 export async function isAdmin(userId: string): Promise<boolean> {
   if (!userId) return false
   const user = await prisma.usuario.findUnique({ where: { id: userId } })
