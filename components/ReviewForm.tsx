@@ -9,48 +9,27 @@ interface Props {
   onSubmit: (input: CreateReviewInput) => Promise<void>
   loading?: boolean
   excludeIds?: string[]
-  purchasableProductIds?: string[]
-  purchasableSellerIds?: string[]
+  products: { id: string; name: string; sellerName: string }[]
+  sellers: { id: string; name: string }[]
+  dataLoading?: boolean
   tipo?: ReviewType | null
   targetId?: string
   onTipoChange?: (tipo: ReviewType | null) => void
   onTargetChange?: (targetId: string) => void
 }
 
-export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableProductIds, purchasableSellerIds, tipo: initialTipo, targetId: initialTargetId, onTipoChange, onTargetChange }: Props) {
+export default function ReviewForm({ onSubmit, loading, excludeIds, products, sellers, dataLoading, tipo: initialTipo, targetId: initialTargetId, onTipoChange, onTargetChange }: Props) {
   const [tipo, setTipo] = useState<ReviewType | null>(initialTipo ?? null)
   const [targetId, setTargetId] = useState(initialTargetId ?? '')
   const [rating, setRating] = useState(0)
   const [comentario, setComentario] = useState('')
   const [error, setError] = useState('')
 
-  const mockProducts = [
-    { id: 'p1', name: 'Nike Air Max 270', sellerName: 'Sneakers Store' },
-    { id: 'p2', name: 'Adidas Ultraboost 22', sellerName: 'Zapatería Deportiva SRL' },
-    { id: 'p3', name: 'Puma RS-X', sellerName: 'Urban Kicks' },
-    { id: 'p4', name: 'Converse Chuck Taylor', sellerName: 'Sneakers Store' },
-    { id: 'p5', name: 'Vans Old Skool', sellerName: 'Zapatería Deportiva SRL' },
-    { id: 'p6', name: 'New Balance 574', sellerName: 'Sneakers Store' },
-    { id: 'p7', name: 'Reebok Classic Leather', sellerName: 'Zapatería Deportiva SRL' },
-    { id: 'p8', name: 'Skechers Go Walk', sellerName: 'Urban Kicks' },
-    { id: 'p9', name: 'Under Armour HOVR', sellerName: 'Sneakers Store' },
-    { id: 'p10', name: 'Fila Disruptor', sellerName: 'Fashion Shoes' },
-  ]
-
-  const mockSellers = [
-    { id: 's1', name: 'Zapatería Deportiva SRL' },
-    { id: 's2', name: 'Sneakers Store' },
-    { id: 's3', name: 'Urban Kicks' },
-    { id: 's4', name: 'Fashion Shoes' },
-  ]
-
-  const availableProducts = mockProducts.filter(p =>
+  const availableProducts = products.filter(p =>
     !excludeIds?.includes(`product:${p.id}`)
-    && (purchasableProductIds === undefined || purchasableProductIds.includes(p.id))
   )
-  const availableSellers = mockSellers.filter(s =>
+  const availableSellers = sellers.filter(s =>
     !excludeIds?.includes(`seller:${s.id}`)
-    && (purchasableSellerIds === undefined || purchasableSellerIds.includes(s.id))
   )
 
   const handleTipoChange = (newTipo: ReviewType | null) => {
@@ -121,14 +100,20 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <button
             onClick={() => handleTipoChange('product')}
-            className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-lg"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-lg"
           >
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
             Reseñar Producto
           </button>
           <button
             onClick={() => handleTipoChange('seller')}
-            className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-lg"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 font-medium text-lg"
           >
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M9 22V12h6v10" />
+            </svg>
             Reseñar Vendedor
           </button>
         </div>
@@ -147,9 +132,16 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
       </button>
 
       {(tipo === 'product' ? availableProducts : availableSellers).length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          Ya reseñaste todos los {tipo === 'product' ? 'productos' : 'vendedores'} disponibles.
-        </div>
+        dataLoading ? (
+          <div className="space-y-3 animate-pulse">
+            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            Ya reseñaste todos los {tipo === 'product' ? 'productos' : 'vendedores'} disponibles.
+          </div>
+        )
       ) : (
         <CustomSelect
           label={tipo === 'product' ? 'Producto' : 'Vendedor'}
@@ -158,7 +150,8 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, purchasableP
             : availableSellers}
           value={targetId}
           onChange={handleTargetChange}
-          placeholder={tipo === 'product' ? 'Seleccionar producto...' : 'Seleccionar vendedor...'}
+          placeholder={tipo === 'product' ? 'Buscar producto...' : 'Buscar vendedor...'}
+          searchable
         />
       )}
 

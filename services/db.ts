@@ -140,6 +140,60 @@ export async function getReviewById(id: string): Promise<Review | null> {
   return mapped
 }
 
+export async function getAllReviews(params: PaginationParams): Promise<PaginatedResponse<Review>> {
+  const { page, limit } = sanitizePagination(params.page, params.limit)
+  const where: Record<string, unknown> = {}
+
+  if (params.search) {
+    const q = params.search
+    const [matchingProducts, matchingSellers] = await Promise.all([
+      prisma.producto.findMany({
+        where: { nombre: { contains: q, mode: 'insensitive' } },
+        select: { id: true },
+      }),
+      prisma.vendedor.findMany({
+        where: { nombre: { contains: q, mode: 'insensitive' } },
+        select: { id: true },
+      }),
+    ])
+
+    const productIds = matchingProducts.map(p => p.id)
+    const sellerIds = matchingSellers.map(s => s.id)
+
+    where.OR = [
+      { comentario: { contains: q, mode: 'insensitive' } },
+      { targetId: { in: [...productIds, ...sellerIds] } },
+    ]
+  }
+
+  if (params.tipo) {
+    where.tipo = params.tipo
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.reseña.findMany({
+      where,
+      include: { usuario: true },
+      orderBy: { fecha: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.reseña.count({ where }),
+  ])
+
+  const reviews = data.map(r => mapReview(r))
+  const targetMap = await resolveTargetNames(reviews)
+  for (const review of reviews) {
+    const resolved = targetMap.get(`${review.tipo}:${review.targetId}`)
+    if (resolved) {
+      review.targetName = resolved.targetName
+      review.sellerName = resolved.sellerName
+    }
+  }
+
+  return { data: reviews, total, page, limit, totalPages: Math.ceil(total / limit) }
+}
+
 export async function getMyReviews(userId: string, params: PaginationParams): Promise<PaginatedResponse<Review>> {
   const { page, limit } = sanitizePagination(params.page, params.limit)
   const where: Record<string, unknown> = { userId }
@@ -710,6 +764,63 @@ export async function searchSellers(query: string, page = 1, limit = 10): Promis
   ])
   return {
     data: sellers.map(s => ({ id: s.id, nombre: s.nombre })),
+    total,
+  }
+}
+
+export async function searchAll(
+  query: string,
+  page = 1,
+  limit = 10,
+): Promise<{ data: { id: string; nombre: string; vendedorNombre?: string; _tipo: 'product' | 'seller' }[]; total: number }> {
+  const q = query.trim() ? `%${query}%` : '%'
+
+  interface RawRow {
+    id: string
+    nombre: string
+    vendedorNombre: string | null
+    _tipo: string
+  }
+
+  const [rows, countResult] = await Promise.all([
+    prisma.$queryRawUnsafe<RawRow[]>(
+      `SELECT p.id, p.nombre, v.nombre AS "vendedorNombre", 'product' AS "_tipo"
+       FROM "Producto" p
+       LEFT JOIN "Vendedor" v ON p."vendedorId" = v.id
+       WHERE p.nombre ILIKE $1
+
+       UNION ALL
+
+       SELECT s.id, s.nombre, NULL AS "vendedorNombre", 'seller' AS "_tipo"
+       FROM "Vendedor" s
+       WHERE s.nombre ILIKE $1
+
+       ORDER BY nombre
+       LIMIT $2 OFFSET $3`,
+      q,
+      limit,
+      (page - 1) * limit,
+    ),
+    prisma.$queryRawUnsafe<{ total: bigint }[]>(
+      `SELECT COUNT(*) AS total
+       FROM (
+         SELECT p.id FROM "Producto" p WHERE p.nombre ILIKE $1
+         UNION ALL
+         SELECT s.id FROM "Vendedor" s WHERE s.nombre ILIKE $1
+       ) combined`,
+      q,
+    ),
+  ])
+
+  const total = Number(countResult[0]?.total ?? 0)
+
+  return {
+    data: rows.map(r => ({
+      id: r.id,
+      nombre: r.nombre,
+      vendedorNombre: r.vendedorNombre ?? undefined,
+      _tipo: r._tipo as 'product' | 'seller',
+    })),
     total,
   }
 }

@@ -34,21 +34,29 @@ export default function CrearResenaClient() {
   const [createdReview, setCreatedReview] = useState<Review & { moderationSkipped?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [reviewedIds, setReviewedIds] = useState<string[]>([])
-  const [purchasableProductIds, setPurchasableProductIds] = useState<string[] | undefined>(undefined)
-  const [purchasableSellerIds, setPurchasableSellerIds] = useState<string[] | undefined>(undefined)
+  const [products, setProducts] = useState<{ id: string; name: string; sellerName: string }[]>([])
+  const [sellers, setSellers] = useState<{ id: string; name: string }[]>([])
+  const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
     if (!userId) return
-    getMyReviews(userId, { page: 1, limit: 100 }).then(res => {
-      const activeIds = res.data
-        .filter(r => r.estado === 'published' || r.estado === 'reported')
-        .map(r => `${r.tipo}:${r.targetId}`)
-      setReviewedIds(activeIds)
+    let ignore = false
+    setDataLoading(true)
+    Promise.all([
+      getMyReviews(userId, { page: 1, limit: 100 }),
+      getUserPurchasableTargets(),
+    ]).then(([reviewsRes, targetsRes]) => {
+      if (ignore) return
+      setReviewedIds(
+        reviewsRes.data
+          .filter(r => r.estado === 'published' || r.estado === 'reported')
+          .map(r => `${r.tipo}:${r.targetId}`)
+      )
+      setProducts(targetsRes.products)
+      setSellers(targetsRes.sellers)
+      setDataLoading(false)
     })
-    getUserPurchasableTargets().then(res => {
-      setPurchasableProductIds(res.productIds)
-      setPurchasableSellerIds(res.sellerIds)
-    })
+    return () => { ignore = true }
   }, [userId])
 
   const handleSubmit = async (input: CreateReviewInput) => {
@@ -118,8 +126,9 @@ export default function CrearResenaClient() {
             onSubmit={handleSubmit}
             loading={loading}
             excludeIds={reviewedIds}
-            purchasableProductIds={purchasableProductIds}
-            purchasableSellerIds={purchasableSellerIds}
+            products={products}
+            sellers={sellers}
+            dataLoading={dataLoading}
             tipo={tipoParam}
             targetId={targetIdParam}
             onTipoChange={(t) => updateURL({ tipo: t ?? undefined, id: undefined })}
