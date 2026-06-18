@@ -5,22 +5,27 @@ interface Props {
   label: string
   isOpen: boolean
   onToggle: () => void
+  active?: boolean
   children: React.ReactNode
 }
 
-const BTN_CLASSES =
-  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-gray-700 dark:text-gray-200 ' +
-  'hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 ' +
-  'font-medium shrink-0 whitespace-nowrap'
+const BASE_CLASSES =
+  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium shrink-0 whitespace-nowrap'
 
-export default function NavDropdown({ icon, label, isOpen, onToggle, children }: Props) {
+const INACTIVE_CLASSES =
+  'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400'
+
+const ACTIVE_CLASSES =
+  'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30'
+
+export default function NavDropdown({ icon, label, isOpen, onToggle, active, children }: Props) {
   return (
     <>
       <button
         onClick={onToggle}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className={BTN_CLASSES}
+        className={`${BASE_CLASSES} ${active ? ACTIVE_CLASSES : INACTIVE_CLASSES}`}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d={icon} />

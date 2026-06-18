@@ -6,6 +6,7 @@ Autenticación vía `Authorization: Bearer <api_key>` o `?api_key=`.
 
 | Método | Endpoint | Descripción | Consumido por |
 |:------:|----------|-------------|---------------|
+| POST | `/api/users` | Sincronizar usuario desde Buyer App | Buyer App |
 | POST | `/api/reviews/product` | Crear reseña de producto | Buyer App |
 | POST | `/api/reviews/seller` | Crear reseña de vendedor | Buyer App |
 | GET | `/api/reviews/product/[id]` | Obtener reseñas de producto | Buyer App |

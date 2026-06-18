@@ -8,10 +8,8 @@
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
-| Administrador | `admin+clerktest@iaw.com` | `iawuser#` |
-| Administrador | `zapasya.clerk@gmail.com` | `ZapasYa11@` |
-| Usuario | `userzapasya@proton.me` | `userZapasYa` |
-| Usuario | `user+clerktest@iaw.com` | `iawuser#` |
+| Administrador | `admin+clerk_test@iaw.com` | `iawuser#` |
+| Usuario | `user+clerk_test@iaw.com` | `iawuser#` |
 
 ---
 
@@ -54,8 +52,6 @@ Las reseñas usan soft delete (cambio de estado a `removed`), la moderación por
 - **Seguridad**: prevención de auto-reporte de reseñas propias.
 
 ### Limitaciones conocidas
-- **Verificación de compras mockeada**: `getUserPurchases()` devuelve todos los productos y vendedores como "comprados". Pendiente de integración con el sistema de compras real.
-- **Productos y vendedores hardcodeados** en el formulario de creación de reseña (10 productos, 4 vendedores).
 - **Moderación por IA best-effort**: si Gemini falla, la reseña se crea igual con una advertencia (`moderationSkipped`).
 - **Sin carga de imágenes** en las reseñas.
 

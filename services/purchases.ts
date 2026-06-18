@@ -63,5 +63,5 @@ export async function getUserPurchases(userId: string): Promise<PurchaseInfo> {
     }
   }
 
-  return buildFromLocal(undefined)
+  return buildFromLocal([])
 }

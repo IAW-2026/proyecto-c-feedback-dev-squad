@@ -139,7 +139,7 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, products, se
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            Ya reseñaste todos los {tipo === 'product' ? 'productos' : 'vendedores'} disponibles.
+            No tenés {tipo === 'product' ? 'productos' : 'vendedores'} para reseñar
           </div>
         )
       ) : (
