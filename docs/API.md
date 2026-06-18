@@ -15,6 +15,7 @@ Autenticación vía `Authorization: Bearer <api_key>` o `?api_key=`.
 | GET | `/api/reports` | Listar reportes | Control Plane |
 | POST | `/api/reports` | Crear reporte | Control Plane, Buyer App, Seller App |
 | GET | `/api/reports/[id]` | Obtener reporte por ID | Control Plane |
+| GET | `/api/reports/[id]/ai-opinion` | Obtener opinión generada por IA sobre un reporte | Control Plane |
 | POST | `/api/reports/[id]/resolve` | Resolver reporte | Control Plane |
 | GET | `/api/stats/product/[id]` | Estadísticas de producto | Buyer App, Seller App |
 | GET | `/api/stats/seller/[id]` | Estadísticas de vendedor | Buyer App, Seller App |
