@@ -24,7 +24,10 @@ Copiar `.env.example` como `.env.local` y completar los valores.
 | `GEMINI_API_KEY` | API key de Google Gemini |
 | `API_KEY_BUYER_APP` | API key para Buyer App |
 | `API_KEY_SELLER_APP` | API key para Seller App |
+| `API_KEY_CONTROL_PLANE` | API key para Control Plane |
+| `API_KEY_ANALYTICS` | API key para Analytics |
 | `BUYER_APP_URL` | URL de Buyer App |
+| `CRON_SECRET` | Sincronizar DB cada dia mediante Vercel |
 
 ## Seed
 
@@ -32,7 +35,7 @@ Copiar `.env.example` como `.env.local` y completar los valores.
 pnpm prisma db seed
 ```
 
-Carga 20 usuarios, 4 vendedores, 10 productos, 30 reseñas y 13 reportes.
+Carga 20 usuarios, 60 reseñas y 16 reportes y sincroniza con Seller App.
 
 ## Rutas
 

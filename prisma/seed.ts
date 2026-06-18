@@ -88,6 +88,33 @@ async function main() {
     productCount = hardcodedProductos.length
   }
 
+  const allProducts = await prisma.producto.findMany()
+  const reviewedProductIds = await prisma.reseña.findMany({
+    where: { tipo: 'product' },
+    select: { targetId: true },
+    distinct: ['targetId'],
+  })
+  const reviewedIds = new Set(reviewedProductIds.map(r => r.targetId))
+  const extraProducts = allProducts.filter(p => !reviewedIds.has(p.id))
+
+  const extraReviews = extraProducts.flatMap((p, pi) => {
+    const reviewsForProduct = [
+      { rating: 5, comentario: 'Excelente producto, superó todas mis expectativas. Muy recomendable.', userId: 'u4' },
+      { rating: 4, comentario: 'Muy buenas, calidad-precio excelente. Llegaron rápido y bien embaladas.', userId: 'u9' },
+      { rating: 3, comentario: 'Están bien, cumplen su función. Esperaba un poco más por el precio.', userId: 'u14' },
+      { rating: 4, comentario: 'Lindas y cómodas. El diseño es tal cual las fotos, muy contento.', userId: 'user_3DK1NXhCR69ixMT496ab2Z4j0cd' },
+    ]
+    return reviewsForProduct.map((r, ri) => ({
+      id: `${61 + pi * 4 + ri}`,
+      tipo: 'product' as const,
+      targetId: p.id,
+      userId: r.userId,
+      rating: r.rating,
+      comentario: r.comentario,
+      estado: 'published' as const,
+    }))
+  })
+
   const reviewData = [
     { id: '1', tipo: 'product', targetId: 'e9a8aabe-d151-4cac-bfa9-9e2726d32a11', userId: 'u1', rating: 5, comentario: 'Excelente zapatilla, muy cómoda y llegó en perfecto estado.', estado: 'published' },
     { id: '2', tipo: 'product', targetId: 'b80c7c9e-d145-407e-a530-4c2b3fa9abb9', userId: 'u2', rating: 4, comentario: 'Muy buenas, solo que el talle viene un poco grande.', estado: 'reported' },
@@ -151,7 +178,7 @@ async function main() {
     { id: '60', tipo: 'product', targetId: '5b01cc09-71cb-4ef9-ae54-a4c2002924cb', userId: 'u1', rating: 5, comentario: 'Gaga running edition, perfectas para correr con estilo.', estado: 'published' },
   ]
 
-  await prisma.reseña.createMany({ data: reviewData, skipDuplicates: true })
+  await prisma.reseña.createMany({ data: [...reviewData, ...extraReviews], skipDuplicates: true })
 
   const reportData = [
     { id: 'r1', reseñaId: '4', reporterId: 'u3', razon: 'Contenido falso, el usuario nunca compró el producto.', resuelto: false },
@@ -174,7 +201,7 @@ async function main() {
 
   await prisma.reporte.createMany({ data: reportData, skipDuplicates: true })
 
-  console.log(`Seed completado: 20 usuarios, ${sellerCount} vendedores, ${productCount} productos, 60 reseñas y 16 reportes insertados.`)
+  console.log(`Seed completado: 20 usuarios, ${sellerCount} vendedores, ${productCount} productos, ${reviewData.length + extraReviews.length} reseñas y 16 reportes insertados.`)
 }
 
 main()

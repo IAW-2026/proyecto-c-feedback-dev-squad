@@ -61,6 +61,33 @@ export async function syncFromSellerApp(): Promise<{ sellers: number; products: 
     fetchAllProducts(),
   ])
 
+  const currentSellerIds = sellers.map(s => s.id)
+  const currentProductIds = products.map(p => p.id)
+
+  const oldProductIds = (await prisma.producto.findMany({
+    where: { id: { notIn: currentProductIds } },
+    select: { id: true },
+  })).map(p => p.id)
+
+  const oldSellerIds = (await prisma.vendedor.findMany({
+    where: { id: { notIn: currentSellerIds } },
+    select: { id: true },
+  })).map(v => v.id)
+
+  const oldTargetIds = [...oldProductIds, ...oldSellerIds]
+
+  if (oldTargetIds.length > 0) {
+    const oldReviewIds = (await prisma.reseña.findMany({
+      where: { targetId: { in: oldTargetIds } },
+      select: { id: true },
+    })).map(r => r.id)
+
+    await prisma.reporte.deleteMany({ where: { reseñaId: { in: oldReviewIds } } })
+    await prisma.reseña.deleteMany({ where: { targetId: { in: oldTargetIds } } })
+    await prisma.producto.deleteMany({ where: { id: { in: oldProductIds } } })
+    await prisma.vendedor.deleteMany({ where: { id: { in: oldSellerIds } } })
+  }
+
   for (const s of sellers) {
     await prisma.vendedor.upsert({
       where: { id: s.id },
