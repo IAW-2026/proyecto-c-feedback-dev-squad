@@ -20,12 +20,22 @@ export default async function VendedorReviewsPage({ params }: Props) {
   return (
     <main className="min-h-[calc(100vh-8rem)] px-4 py-12">
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/explorar"
-          className="inline-block text-sm text-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mb-4"
-        >
-          &larr; Volver a explorar
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link
+            href="/explorar"
+            className="inline-block text-sm text-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            &larr; Volver a explorar
+          </Link>
+          <a
+            href="https://proyecto-c-seller-dev-squad.vercel.app/dashboard/reviews"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-sm text-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            Ir a la app de vendedores &rarr;
+          </a>
+        </div>
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
           {targetName}
         </h1>
