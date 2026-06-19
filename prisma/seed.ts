@@ -3,6 +3,30 @@ import { syncFromSellerApp } from '../services/sync'
 
 const prisma = new PrismaClient()
 
+function getRandomDateInRange(startDate: Date, endDate: Date): Date {
+  const start = startDate.getTime()
+  const end = endDate.getTime()
+  const randomTime = start + Math.random() * (end - start)
+  return new Date(randomTime)
+}
+
+function generateReviewDate(): Date {
+  const startDate = new Date(2026, 0, 1) 
+  const endDate = new Date(2026, 5, 30) 
+  return getRandomDateInRange(startDate, endDate)
+}
+
+function generateReportDate(reviewDate: Date): Date {
+  const reportDate = new Date(reviewDate)
+  const daysToAdd = Math.floor(Math.random() * 60) + 1
+  reportDate.setDate(reportDate.getDate() + daysToAdd)
+  const maxDate = new Date(2026, 5, 30)
+  if (reportDate > maxDate) {
+    reportDate.setTime(maxDate.getTime())
+  }
+  return reportDate
+}
+
 async function main() {
   const usuarios = [
     { id: 'u1', nombre: 'Carlos', apellido: 'Pérez', rol: 'user' },
@@ -88,7 +112,25 @@ async function main() {
     productCount = hardcodedProductos.length
   }
 
+  // Clean up orphan data before seeding fresh
+  const allProdIds = (await prisma.producto.findMany({ select: { id: true } })).map(p => p.id)
+  const allSellIds = (await prisma.vendedor.findMany({ select: { id: true } })).map(v => v.id)
+  const orphanReviewIds = (await prisma.reseña.findMany({
+    where: {
+      OR: [
+        { tipo: 'product', targetId: { notIn: allProdIds } },
+        { tipo: 'seller', targetId: { notIn: allSellIds } },
+      ],
+    },
+    select: { id: true },
+  })).map(r => r.id)
+  if (orphanReviewIds.length > 0) {
+    await prisma.reporte.deleteMany({ where: { reseñaId: { in: orphanReviewIds } } })
+    await prisma.reseña.deleteMany({ where: { id: { in: orphanReviewIds } } })
+  }
+
   const allProducts = await prisma.producto.findMany()
+  const allSellers = await prisma.vendedor.findMany()
   const reviewedProductIds = await prisma.reseña.findMany({
     where: { tipo: 'product' },
     select: { targetId: true },
@@ -112,6 +154,7 @@ async function main() {
       rating: r.rating,
       comentario: r.comentario,
       estado: 'published' as const,
+      fecha: generateReviewDate(),
     }))
   })
 
@@ -178,7 +221,24 @@ async function main() {
     { id: '60', tipo: 'product', targetId: '5b01cc09-71cb-4ef9-ae54-a4c2002924cb', userId: 'u1', rating: 5, comentario: 'Gaga running edition, perfectas para correr con estilo.', estado: 'published' },
   ]
 
-  await prisma.reseña.createMany({ data: [...reviewData, ...extraReviews], skipDuplicates: true })
+  const productIdMap = new Map<string, string>()
+  const sellerIdMap = new Map<string, string>()
+  const uniqueProductIds = [...new Set(reviewData.filter(r => r.tipo === 'product').map(r => r.targetId))]
+  const uniqueSellerIds = [...new Set(reviewData.filter(r => r.tipo === 'seller').map(r => r.targetId))]
+  uniqueProductIds.forEach((id, i) => productIdMap.set(id, allProducts[i % allProducts.length].id))
+  uniqueSellerIds.forEach((id, i) => sellerIdMap.set(id, allSellers[i % allSellers.length].id))
+  const mappedReviewData = reviewData.map(r => ({
+    ...r,
+    targetId: r.tipo === 'product'
+      ? (productIdMap.get(r.targetId) ?? r.targetId)
+      : (sellerIdMap.get(r.targetId) ?? r.targetId),
+  }))
+
+  const reviewDataWithDates = mappedReviewData.map(r => ({ ...r, fecha: generateReviewDate() }))
+  const allReviews = [...reviewDataWithDates, ...extraReviews]
+  const reviewDatesMap = new Map(allReviews.map(r => [r.id, r.fecha]))
+
+  await prisma.reseña.createMany({ data: allReviews, skipDuplicates: true })
 
   const reportData = [
     { id: 'r1', reseñaId: '4', reporterId: 'u3', razon: 'Contenido falso, el usuario nunca compró el producto.', resuelto: false },
@@ -199,9 +259,14 @@ async function main() {
     { id: 'r16', reseñaId: '53', reporterId: 'u13', razon: 'Comentario excesivamente subjetivo sobre el vendedor.', resuelto: false },
   ]
 
-  await prisma.reporte.createMany({ data: reportData, skipDuplicates: true })
+  const reportDataWithDates = reportData.map(r => ({
+    ...r,
+    fecha: generateReportDate(reviewDatesMap.get(r.reseñaId)!)
+  }))
 
-  console.log(`Seed completado: 20 usuarios, ${sellerCount} vendedores, ${productCount} productos, ${reviewData.length + extraReviews.length} reseñas y 16 reportes insertados.`)
+  await prisma.reporte.createMany({ data: reportDataWithDates, skipDuplicates: true })
+
+  console.log(`Seed completado: 20 usuarios, ${sellerCount} vendedores, ${productCount} productos, ${allReviews.length} reseñas y 16 reportes insertados.`)
 }
 
 main()
