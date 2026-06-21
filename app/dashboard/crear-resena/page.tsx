@@ -1,10 +1,16 @@
 import { Suspense } from 'react'
+import { auth } from '@clerk/nextjs/server'
+import { verifyToken } from '../../../lib/handoffToken'
 import CrearResenaClient from './CrearResenaClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Crear Reseña',
   description: 'Publicá una reseña sobre un producto o vendedor',
+}
+
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 function LoadingSkeleton() {
@@ -27,10 +33,30 @@ function LoadingSkeleton() {
   )
 }
 
-export default function CrearResenaPage() {
+export default async function CrearResenaPage({ searchParams }: Props) {
+  const sp = await searchParams
+  const { userId: clerkUserId } = await auth()
+
+  let tokenUserId: string | null = null
+  let verifiedToken: string | null = null
+
+  if (!clerkUserId && sp?.token && sp?.id) {
+    const secret = sp.tipo === 'product'
+      ? process.env.API_KEY_BUYER_APP!
+      : process.env.API_KEY_SELLER_APP!
+    const verified = await verifyToken(secret, sp.token as string, sp.id as string)
+    if (verified) {
+      tokenUserId = verified.userId
+      verifiedToken = sp.token as string
+    }
+  }
+
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <CrearResenaClient />
+      <CrearResenaClient
+        tokenUserId={tokenUserId}
+        token={verifiedToken}
+      />
     </Suspense>
   )
 }

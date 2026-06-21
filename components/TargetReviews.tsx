@@ -38,8 +38,10 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
       const p = Math.max(1, Number(sp.get('page')) || 1)
       setPage(p)
       const params = new URLSearchParams()
+      const token = sp.get('token')
+      if (token) params.set('token', token)
       params.set('page', String(p))
-      router.replace(`${pathname}${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false })
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
     syncFromUrl()
     window.addEventListener('popstate', syncFromUrl)
@@ -56,6 +58,8 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
       ])
       if (page > reviewsData.totalPages) {
         const params = new URLSearchParams()
+        const token = new URLSearchParams(window.location.search).get('token')
+        if (token) params.set('token', token)
         params.set('page', '1')
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setPage(1)
@@ -234,6 +238,8 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
               <Pagination page={page} totalPages={reviews.totalPages} onPageChange={p => {
                 setPage(p)
                 const params = new URLSearchParams()
+                const token = new URLSearchParams(window.location.search).get('token')
+                if (token) params.set('token', token)
                 params.set('page', String(p))
                 router.replace(`${pathname}?${params.toString()}`, { scroll: false })
               }} />

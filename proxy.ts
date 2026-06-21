@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 import { prisma } from './lib/prisma'
 
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin(.*)', '/explorar(.*)'])
@@ -6,6 +7,16 @@ const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin(.*)', '/e
 export default clerkMiddleware(async (auth, req) => {
   const { isAuthenticated, redirectToSignIn, sessionClaims } = await auth()
   const pathname = req.nextUrl.pathname
+
+  const hasToken = !!req.nextUrl.searchParams.get('token')
+  const isPublicResourcePath =
+    pathname.startsWith('/explorar/producto/') ||
+    pathname.startsWith('/explorar/vendedor/') ||
+    pathname === '/dashboard/crear-resena'
+
+  if (isPublicResourcePath && hasToken) {
+    return NextResponse.next()
+  }
 
   if (!isAuthenticated && isProtectedRoute(req)) {
     return redirectToSignIn()
