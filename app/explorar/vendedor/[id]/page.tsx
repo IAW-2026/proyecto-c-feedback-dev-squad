@@ -1,10 +1,13 @@
 import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
 import { resolveTargetName } from '../../../../services/db'
 import TargetReviews from '../../../../components/TargetReviews'
+import { verifyToken } from '../../../../lib/handoffToken'
 import type { Metadata } from 'next'
 
 interface Props {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -13,9 +16,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${targetName} - Reseñas`, description: `Reseñas de ${targetName}` }
 }
 
-export default async function VendedorReviewsPage({ params }: Props) {
+export default async function VendedorReviewsPage({ params, searchParams }: Props) {
   const { id } = await params
+  const sp = await searchParams
+  const { userId: clerkUserId } = await auth()
   const { targetName } = await resolveTargetName('seller', id)
+
+  let tokenUserId: string | null = null
+  if (!clerkUserId && sp?.token) {
+    tokenUserId = (
+      await verifyToken(process.env.API_KEY_BUYER_APP!, sp.token as string, id)
+      ?? await verifyToken(process.env.API_KEY_SELLER_APP!, sp.token as string, id)
+    )?.userId ?? null
+  }
 
   return (
     <main className="min-h-[calc(100vh-8rem)] px-4 py-12">

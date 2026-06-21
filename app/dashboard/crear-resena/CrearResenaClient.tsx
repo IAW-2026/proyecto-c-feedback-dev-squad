@@ -9,16 +9,24 @@ import ReviewCard from '../../../components/ReviewCard'
 import { createReview, getMyReviews, getUserPurchasableTargets } from '../../actions'
 import type { CreateReviewInput, Review } from '../../../types'
 
-export default function CrearResenaClient() {
-  const { userId } = useAuth()
+interface Props {
+  tokenUserId?: string | null
+  token?: string | null
+}
+
+export default function CrearResenaClient({ tokenUserId, token }: Props) {
+  const { userId: clerkUserId } = useAuth()
   const { user } = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
 
+  const effectiveUserId = clerkUserId || tokenUserId
+
   const rawTipo = searchParams.get('tipo')
   const tipoParam = (rawTipo === 'product' || rawTipo === 'seller') ? rawTipo : null
   const targetIdParam = searchParams.get('id') || ''
+  const hasPreselectedTarget = !!(tipoParam && targetIdParam)
 
   const updateURL = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -39,11 +47,15 @@ export default function CrearResenaClient() {
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) return
+    if (!effectiveUserId) return
+    if (!clerkUserId) {
+      setDataLoading(false)
+      return
+    }
     let ignore = false
     setDataLoading(true)
     Promise.all([
-      getMyReviews(userId, { page: 1, limit: 100 }),
+      getMyReviews(effectiveUserId, { page: 1, limit: 100 }),
       getUserPurchasableTargets(),
     ]).then(([reviewsRes, targetsRes]) => {
       if (ignore) return
@@ -57,15 +69,19 @@ export default function CrearResenaClient() {
       setDataLoading(false)
     })
     return () => { ignore = true }
-  }, [userId])
+  }, [effectiveUserId, clerkUserId, hasPreselectedTarget])
 
   const handleSubmit = async (input: CreateReviewInput) => {
-    if (!userId) return
+    if (!effectiveUserId) return
     setLoading(true)
     setError('')
 
     try {
-      const created = await createReview(input, user?.fullName ?? 'Usuario')
+      const created = await createReview(
+        input,
+        user?.fullName ?? 'Usuario',
+        token ? { value: token, tipo: input.tipo } : undefined
+      )
       setCreatedReview(created)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ocurrió un error al publicar la reseña.')
