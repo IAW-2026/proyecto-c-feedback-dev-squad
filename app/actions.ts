@@ -3,6 +3,8 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { isAdmin } from '../services/db'
 import { ensureUser } from '../services/ensureUser'
+import { verifyToken } from '../lib/handoffToken'
+import { prisma } from '../lib/prisma'
 import type {
   Review,
   ReviewStats,
@@ -48,8 +50,29 @@ export async function getMyReviews(
 export async function createReview(
   input: CreateReviewInput,
   userName: string,
+  handoff?: { value: string; tipo: string },
 ): Promise<Review & { moderationSkipped?: boolean }> {
-  const { userId } = await auth()
+  let userId: string | null = null
+
+  const { userId: clerkUserId } = await auth()
+  if (clerkUserId) {
+    userId = clerkUserId
+  } else if (handoff) {
+    const secret = handoff.tipo === 'product'
+      ? process.env.API_KEY_BUYER_APP!
+      : process.env.API_KEY_SELLER_APP!
+    const verified = await verifyToken(secret, handoff.value, input.targetId)
+    if (verified) {
+      userId = verified.userId
+      const existing = await prisma.usuario.findUnique({ where: { id: userId } })
+      if (!existing) {
+        await prisma.usuario.create({
+          data: { id: userId, nombre: userName || 'Usuario' },
+        })
+      }
+    }
+  }
+
   if (!userId) throw new Error('No autenticado')
 
   let moderationSkipped = false
@@ -66,7 +89,7 @@ export async function createReview(
     moderationSkipped = true
   }
 
-  const review = await dbCreateReview(input, userId, userName ?? 'Usuario')
+  const review = await dbCreateReview(input, userId, userName || 'Usuario')
   return Object.assign(review, { moderationSkipped })
 }
 
