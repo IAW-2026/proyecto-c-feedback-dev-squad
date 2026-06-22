@@ -60,7 +60,7 @@ export default async function ProductoReviewsPage({ params, searchParams }: Prop
           </p>
         )}
         {!sellerName && <div className="mb-8" />}
-        <TargetReviews targetId={id} tipo="product" targetName={targetName} />
+        <TargetReviews targetId={id} tipo="product" targetName={targetName} tokenUserId={tokenUserId} token={sp?.token ? (sp.token as string) : undefined} />
       </div>
     </main>
   )

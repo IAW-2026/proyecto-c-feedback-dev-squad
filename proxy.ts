@@ -38,12 +38,12 @@ export default clerkMiddleware(async (auth, req) => {
     try {
       const user = await prisma.usuario.findUnique({ where: { id: userId } })
 
-      if (user && user.rol === 'admin') {
+      if (user && user.rol.toLowerCase() === 'admin') {
         return
       }
 
       const clerkRole = (sessionClaims as any)?.public_metadata?.role
-      if (clerkRole === 'admin') {
+      if (clerkRole?.toLowerCase() === 'admin') {
         await prisma.usuario.upsert({
           where: { id: userId },
           update: { rol: 'admin' },

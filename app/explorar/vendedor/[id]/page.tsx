@@ -52,7 +52,7 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
           {targetName}
         </h1>
-        <TargetReviews targetId={id} tipo="seller" targetName={targetName} />
+        <TargetReviews targetId={id} tipo="seller" targetName={targetName} tokenUserId={tokenUserId} token={sp?.token ? (sp.token as string) : undefined} />
       </div>
     </main>
   )

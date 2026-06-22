@@ -31,3 +31,6 @@ tsconfig.tsbuildinfo
 # lock files
 pnpm-lock.yaml
 yarn.lock
+
+# test endpoint (para pruebas locales con token handoff)
+app/api/test-token/
