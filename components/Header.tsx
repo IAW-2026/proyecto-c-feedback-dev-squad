@@ -47,7 +47,7 @@ export default function Header() {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [])
 
-  const isAdmin = isLoaded && isSignedIn ? (user?.publicMetadata as any)?.role === 'admin' : false
+  const isAdmin = isLoaded && isSignedIn ? (user?.publicMetadata as any)?.role?.toLowerCase() === 'admin' : false
 
   const handleDashboardClick = () => {
     if (!isSignedIn) {

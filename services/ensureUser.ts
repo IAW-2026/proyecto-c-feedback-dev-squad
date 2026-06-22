@@ -9,7 +9,7 @@ export async function ensureUser(
 ): Promise<{ id: string; nombre: string; apellido: string | null; rol: string }> {
   const existing = await prisma.usuario.findUnique({ where: { id: userId } })
   if (existing) {
-    if (isClerkAdmin && existing.rol !== 'admin') {
+    if (isClerkAdmin && existing.rol?.toLowerCase() !== 'admin') {
       return prisma.usuario.update({
         where: { id: userId },
         data: { rol: 'admin' },

@@ -240,18 +240,42 @@ export async function getTargetAISummaryAction(
 export async function reportReviewAction(
   reseñaId: string,
   razon: string,
+  handoff?: { value: string; tipo: string },
 ): Promise<Report> {
-  const { userId } = await auth()
+  let userId: string | null = null
+  let userName = 'Usuario'
+
+  const { userId: clerkUserId } = await auth()
+  if (clerkUserId) {
+    userId = clerkUserId
+    const clerkUser = await currentUser()
+    userName = clerkUser ? `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() || 'Usuario' : 'Usuario'
+  } else if (handoff) {
+    const review = await prisma.reseña.findUnique({ where: { id: reseñaId } })
+    if (!review) throw new Error('Reseña no encontrada')
+    const secret = review.tipo === 'product'
+      ? process.env.API_KEY_BUYER_APP!
+      : process.env.API_KEY_SELLER_APP!
+    const verified = await verifyToken(secret, handoff.value, review.targetId)
+    if (verified) {
+      userId = verified.userId
+      const existing = await prisma.usuario.findUnique({ where: { id: userId } })
+      if (!existing) {
+        await prisma.usuario.create({
+          data: { id: userId, nombre: userName },
+        })
+      }
+    }
+  }
+
   if (!userId) throw new Error('No autenticado')
-  const clerkUser = await currentUser()
-  const userName = clerkUser ? `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() || 'Usuario' : 'Usuario'
   return dbCreateReport({ reseñaId, razon }, userId, userName)
 }
 
 export async function ensureUserAction(): Promise<void> {
   const clerkUser = await currentUser()
   if (!clerkUser) return
-  const isClerkAdmin = (clerkUser.publicMetadata as any)?.role === 'admin'
+  const isClerkAdmin = (clerkUser.publicMetadata as any)?.role?.toLowerCase() === 'admin'
   await ensureUser(
     clerkUser.id,
     clerkUser.firstName?.trim() || 'Usuario',
