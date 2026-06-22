@@ -828,5 +828,5 @@ export async function searchAll(
 export async function isAdmin(userId: string): Promise<boolean> {
   if (!userId) return false
   const user = await prisma.usuario.findUnique({ where: { id: userId } })
-  return user?.rol === 'admin'
+  return user?.rol?.toLowerCase() === 'admin'
 }

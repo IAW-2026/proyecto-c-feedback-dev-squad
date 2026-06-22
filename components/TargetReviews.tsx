@@ -14,10 +14,13 @@ interface Props {
   targetId: string
   tipo: 'product' | 'seller'
   targetName: string
+  tokenUserId?: string | null
+  token?: string | null
 }
 
-export default function TargetReviews({ targetId, tipo, targetName }: Props) {
+export default function TargetReviews({ targetId, tipo, targetName, tokenUserId, token }: Props) {
   const { userId } = useAuth()
+  const effectiveUserId = userId || tokenUserId
   const router = useRouter()
   const pathname = usePathname()
 
@@ -84,7 +87,11 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
 
   const handleReportSubmit = async (razon: string) => {
     if (!reportReviewId) return
-    await reportReviewAction(reportReviewId, razon)
+    if (tokenUserId && token) {
+      await reportReviewAction(reportReviewId, razon, { value: token, tipo })
+    } else {
+      await reportReviewAction(reportReviewId, razon)
+    }
     setReportReviewId(null)
     fetchReviewsAndStats()
   }
@@ -232,7 +239,7 @@ export default function TargetReviews({ targetId, tipo, targetName }: Props) {
             <>
               <div className="grid gap-4">
                 {reviews.data.map(review => (
-                  <ReviewCard key={review.id} review={review} reportable={!!userId && review.userId !== userId} onReport={openReport} />
+                  <ReviewCard key={review.id} review={review} reportable={!!effectiveUserId && review.userId !== effectiveUserId} onReport={openReport} />
                 ))}
               </div>
               <Pagination page={page} totalPages={reviews.totalPages} onPageChange={p => {
