@@ -830,3 +830,44 @@ export async function isAdmin(userId: string): Promise<boolean> {
   const user = await prisma.usuario.findUnique({ where: { id: userId } })
   return user?.rol?.toLowerCase() === 'admin'
 }
+
+export async function adminUpdateReview(
+  id: string,
+  input: { rating?: number; comentario?: string; estado?: string },
+): Promise<Review | null> {
+  const existing = await prisma.reseña.findUnique({ where: { id } })
+  if (!existing) throw new Error('Reseña no encontrada')
+
+  const data: Record<string, unknown> = {}
+  if (input.rating !== undefined) {
+    if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
+      throw new Error('rating debe ser un número entero entre 1 y 5')
+    }
+    data.rating = input.rating
+  }
+  if (input.comentario !== undefined) {
+    if (input.comentario.length < 10) throw new Error('comentario debe tener al menos 10 caracteres')
+    if (input.comentario.length > MAX_COMENTARIO_LENGTH) throw new Error(`comentario no puede superar los ${MAX_COMENTARIO_LENGTH} caracteres`)
+    data.comentario = input.comentario
+  }
+  if (input.estado !== undefined) {
+    if (!['published', 'reported', 'removed'].includes(input.estado)) {
+      throw new Error('estado debe ser published, reported o removed')
+    }
+    data.estado = input.estado
+  }
+
+  if (Object.keys(data).length === 0) throw new Error('No hay campos para actualizar')
+
+  const review = await prisma.reseña.update({
+    where: { id },
+    data,
+    include: { usuario: true },
+  })
+
+  const mapped = mapReview(review)
+  const resolved = await resolveTargetName(mapped.tipo, mapped.targetId)
+  mapped.targetName = resolved.targetName
+  mapped.sellerName = resolved.sellerName
+  return mapped
+}

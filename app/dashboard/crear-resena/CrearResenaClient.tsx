@@ -48,28 +48,28 @@ export default function CrearResenaClient({ tokenUserId, token }: Props) {
 
   useEffect(() => {
     if (!effectiveUserId) return
-    if (!clerkUserId) {
-      setDataLoading(false)
-      return
-    }
     let ignore = false
     setDataLoading(true)
-    Promise.all([
-      getMyReviews(effectiveUserId, { page: 1, limit: 100 }),
-      getUserPurchasableTargets(),
-    ]).then(([reviewsRes, targetsRes]) => {
+
+    const load = async () => {
+      const [targetsRes, reviewsRes] = await Promise.all([
+        getUserPurchasableTargets(tokenUserId).catch(() => ({ products: [], sellers: [] })),
+        getMyReviews(effectiveUserId, { page: 1, limit: 100 }).catch(() => ({ data: [] })),
+      ])
       if (ignore) return
       setReviewedIds(
-        reviewsRes.data
+        (reviewsRes.data ?? [])
           .filter(r => r.estado === 'published' || r.estado === 'reported')
           .map(r => `${r.tipo}:${r.targetId}`)
       )
       setProducts(targetsRes.products)
       setSellers(targetsRes.sellers)
       setDataLoading(false)
-    })
+    }
+
+    load()
     return () => { ignore = true }
-  }, [effectiveUserId, clerkUserId, hasPreselectedTarget])
+  }, [effectiveUserId, tokenUserId, hasPreselectedTarget])
 
   const handleSubmit = async (input: CreateReviewInput) => {
     if (!effectiveUserId) return
