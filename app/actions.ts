@@ -162,8 +162,16 @@ export async function getAIOpinionAction(reportId: string): Promise<string> {
   return getAIOpinion(report)
 }
 
-export async function getUserPurchasableTargets() {
-  const { userId } = await auth()
+export async function getUserPurchasableTargets(tokenUserId?: string | null) {
+  let userId: string | null = null
+
+  const { userId: clerkUserId } = await auth()
+  if (clerkUserId) {
+    userId = clerkUserId
+  } else if (tokenUserId) {
+    userId = tokenUserId
+  }
+
   if (!userId) throw new Error('No autenticado')
   return dbGetUserPurchases(userId)
 }
