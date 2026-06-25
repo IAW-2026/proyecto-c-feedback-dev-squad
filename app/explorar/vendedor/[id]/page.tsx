@@ -25,7 +25,7 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
   let tokenUserId: string | null = null
   if (!clerkUserId && sp?.token) {
     tokenUserId = (
-      await verifyToken(process.env.BUYER_APP_URL!, sp.token as string, id)
+      await verifyToken(process.env.BUYER_APP_SELLER_KEY!, sp.token as string, id)
       ?? await verifyToken(process.env.API_KEY_SELLER_APP!, sp.token as string, id)
     )?.userId ?? null
   }

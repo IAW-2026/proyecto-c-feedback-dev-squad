@@ -60,7 +60,7 @@ export async function createReview(
   } else if (handoff) {
     const secret = handoff.tipo === 'product'
       ? process.env.BUYER_APP_URL!
-      : process.env.API_KEY_SELLER_APP!
+      : process.env.BUYER_APP_SELLER_KEY!
     const verified = await verifyToken(secret, handoff.value, input.targetId)
     if (verified) {
       userId = verified.userId
@@ -261,10 +261,12 @@ export async function reportReviewAction(
   } else if (handoff) {
     const review = await prisma.reseña.findUnique({ where: { id: reseñaId } })
     if (!review) throw new Error('Reseña no encontrada')
-    const secret = review.tipo === 'product'
-      ? process.env.BUYER_APP_URL!
-      : process.env.API_KEY_SELLER_APP!
-    const verified = await verifyToken(secret, handoff.value, review.targetId)
+    const verified = review.tipo === 'product'
+      ? await verifyToken(process.env.BUYER_APP_URL!, handoff.value, review.targetId)
+      : (
+        await verifyToken(process.env.BUYER_APP_SELLER_KEY!, handoff.value, review.targetId)
+        ?? await verifyToken(process.env.API_KEY_SELLER_APP!, handoff.value, review.targetId)
+      )
     if (verified) {
       userId = verified.userId
       const existing = await prisma.usuario.findUnique({ where: { id: userId } })
