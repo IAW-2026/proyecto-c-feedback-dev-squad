@@ -282,6 +282,28 @@ export async function reportReviewAction(
   return dbCreateReport({ reseñaId, razon }, userId, userName)
 }
 
+export async function getMyReviewedTargetIds(tokenUserId?: string | null): Promise<string[]> {
+  let userId: string | null = null
+
+  const { userId: clerkUserId } = await auth()
+  if (clerkUserId) {
+    userId = clerkUserId
+  } else if (tokenUserId) {
+    userId = tokenUserId
+  }
+
+  if (!userId) throw new Error('No autenticado')
+
+  const reviews = await prisma.reseña.findMany({
+    where: {
+      userId,
+      estado: { in: ['published', 'reported'] },
+    },
+    select: { tipo: true, targetId: true },
+  })
+  return reviews.map(r => `${r.tipo}:${r.targetId}`)
+}
+
 export async function ensureUserAction(): Promise<void> {
   const clerkUser = await currentUser()
   if (!clerkUser) return
