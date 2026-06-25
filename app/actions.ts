@@ -59,7 +59,7 @@ export async function createReview(
     userId = clerkUserId
   } else if (handoff) {
     const secret = handoff.tipo === 'product'
-      ? process.env.API_KEY_BUYER_APP!
+      ? process.env.BUYER_APP_URL!
       : process.env.API_KEY_SELLER_APP!
     const verified = await verifyToken(secret, handoff.value, input.targetId)
     if (verified) {
@@ -262,7 +262,7 @@ export async function reportReviewAction(
     const review = await prisma.reseña.findUnique({ where: { id: reseñaId } })
     if (!review) throw new Error('Reseña no encontrada')
     const secret = review.tipo === 'product'
-      ? process.env.API_KEY_BUYER_APP!
+      ? process.env.BUYER_APP_URL!
       : process.env.API_KEY_SELLER_APP!
     const verified = await verifyToken(secret, handoff.value, review.targetId)
     if (verified) {
