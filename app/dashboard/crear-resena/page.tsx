@@ -42,7 +42,7 @@ export default async function CrearResenaPage({ searchParams }: Props) {
 
   if (!clerkUserId && sp?.token && sp?.id) {
     const secret = sp.tipo === 'product'
-      ? process.env.API_KEY_BUYER_APP!
+      ? process.env.BUYER_APP_URL!
       : process.env.API_KEY_SELLER_APP!
     const verified = await verifyToken(secret, sp.token as string, sp.id as string)
     if (verified) {
