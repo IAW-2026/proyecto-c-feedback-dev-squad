@@ -123,13 +123,23 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, products, se
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <button
-        type="button"
-        onClick={reset}
-        className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-200 transition-colors"
-      >
-        &larr; Cambiar tipo de reseña
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={reset}
+          className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-200 transition-colors"
+        >
+          &larr; Cambiar tipo de reseña
+        </button>
+        <a
+          href="https://zapasya.vercel.app/pedidos"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-sm text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 transition-colors"
+        >
+          Ir a mis pedidos &rarr;
+        </a>
+      </div>
 
       {(tipo === 'product' ? availableProducts : availableSellers).length === 0 ? (
         dataLoading ? (
