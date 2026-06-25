@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { ReviewType, CreateReviewInput } from '../types'
 import StarRating from './StarRating'
 import CustomSelect from './CustomSelect'
+import ThemeLink from './ThemeLink'
 
 interface Props {
   onSubmit: (input: CreateReviewInput) => Promise<void>
@@ -123,22 +124,28 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, products, se
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-row flex-wrap items-center justify-between gap-2">
         <button
           type="button"
           onClick={reset}
-          className="text-sm text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-200 transition-colors"
+          aria-label="Cambiar tipo de reseña"
+          className="inline-flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1.5 border border-gray-300 shadow-sm sm:shadow-none dark:border-gray-600 rounded-full sm:rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
-          &larr; Cambiar tipo de reseña
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+          </svg>
+          <span className="sm:hidden text-xs">Cambiar</span><span className="hidden sm:inline">Cambiar tipo de reseña</span>
         </button>
-        <a
+        <ThemeLink
           href="https://zapasya.vercel.app/pedidos"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block text-sm text-gray-600 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200 transition-colors"
+          aria-label="Ir a mis pedidos"
+          className="inline-flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 py-1.5 border border-gray-300 shadow-sm sm:shadow-none dark:border-gray-600 rounded-full sm:rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
-          Ir a mis pedidos &rarr;
-        </a>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+          </svg>
+          <span className="sm:hidden text-xs">Pedidos</span><span className="hidden sm:inline">Ir a mis pedidos</span>
+        </ThemeLink>
       </div>
 
       {(tipo === 'product' ? availableProducts : availableSellers).length === 0 ? (
@@ -199,8 +206,11 @@ export default function ReviewForm({ onSubmit, loading, excludeIds, products, se
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+        className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
       >
+        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+        </svg>
         {loading ? 'Publicando...' : 'Publicar Reseña'}
       </button>
     </form>
