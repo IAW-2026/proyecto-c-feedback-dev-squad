@@ -50,8 +50,7 @@ export async function getUserPurchases(userId: string): Promise<PurchaseInfo> {
       if (!res.ok) return buildFromLocal([])
 
       const json = await res.json()
-      const allOrders = json.data ?? []
-      const orders = allOrders.filter((o: any) => o.userId === userId)
+      const orders = json.data ?? []
       const productIds = [
         ...new Set(
           orders.flatMap((o: any) => o.items?.map((i: any) => i.productId) ?? []),
