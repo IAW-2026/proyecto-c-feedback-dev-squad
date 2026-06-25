@@ -17,9 +17,10 @@ interface Props {
   pageSize?: number
   searchable?: boolean
   searchPlaceholder?: string
+  disabled?: boolean
 }
 
-export default function CustomSelect({ label, options, value, onChange, placeholder, pageSize = 4, searchable, searchPlaceholder = 'Buscar...' }: Props) {
+export default function CustomSelect({ label, options, value, onChange, placeholder, pageSize = 4, searchable, searchPlaceholder = 'Buscar...', disabled }: Props) {
   const size = Math.max(1, pageSize)
   const [isOpen, setIsOpen] = useState(false)
   const [page, setPage] = useState(1)
@@ -116,6 +117,20 @@ export default function CustomSelect({ label, options, value, onChange, placehol
         setPage(totalPages)
         break
     }
+  }
+
+  if (disabled) {
+    const selectedOption = options.find(o => o.id === value)
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          {label}
+        </label>
+        <div className="w-full px-4 py-3 sm:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white opacity-60 cursor-not-allowed text-left">
+          {selectedOption?.name || placeholder}
+        </div>
+      </div>
+    )
   }
 
   return (

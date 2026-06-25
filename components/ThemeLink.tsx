@@ -18,7 +18,7 @@ export default function ThemeLink({ href, children, className, 'aria-label': ari
     : href
 
   return (
-    <a href={themedHref} className={className} aria-label={ariaLabel}>
+    <a href={themedHref} className={className} aria-label={ariaLabel} suppressHydrationWarning>
       {children}
     </a>
   )

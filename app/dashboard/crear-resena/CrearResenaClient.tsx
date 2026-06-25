@@ -22,6 +22,7 @@ export default function CrearResenaClient({ tokenUserId, token }: Props) {
   const pathname = usePathname()
 
   const effectiveUserId = clerkUserId || tokenUserId
+  const isTokenEntry = !!tokenUserId && !clerkUserId
 
   const rawTipo = searchParams.get('tipo')
   const tipoParam = (rawTipo === 'product' || rawTipo === 'seller') ? rawTipo : null
@@ -169,6 +170,7 @@ export default function CrearResenaClient({ tokenUserId, token }: Props) {
             targetId={targetIdParam}
             onTipoChange={(t) => updateURL({ tipo: t ?? undefined, id: undefined })}
             onTargetChange={(id) => updateURL({ id })}
+            readOnly={isTokenEntry}
           />
         </div>
       </div>
