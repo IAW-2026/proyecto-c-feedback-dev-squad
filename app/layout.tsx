@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes"
+import HideOnToken from '../components/HideOnToken'
 import Header from '../components/Header'
 import UserInit from '../components/UserInit'
 import Toast from '../components/Toast'
@@ -28,15 +29,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Suspense fallback={null}>
               <ThemeFromQuery />
             </Suspense>
-            <UserInit />
-            <Header />
             <Suspense fallback={null}>
-              <Toast />
+              <HideOnToken>
+                <UserInit />
+                <Header />
+                <Suspense fallback={null}>
+                  <Toast />
+                </Suspense>
+              </HideOnToken>
             </Suspense>
             <div className="flex-1 flex flex-col">
               {children}
             </div>
-            <Footer />
+            <Suspense fallback={null}>
+              <HideOnToken>
+                <Footer />
+              </HideOnToken>
+            </Suspense>
           </ThemeProvider>
         </body>
       </html>

@@ -52,6 +52,18 @@ export async function generateToken(
   return `${payloadB64}.${sigB64}`;
 }
 
+export async function verifyTokenAny(
+  candidates: { secret: string; origin: string }[],
+  token: string,
+  expectedTargetId: string
+): Promise<{ userId: string; origin: string } | null> {
+  for (const { secret, origin } of candidates) {
+    const result = await verifyToken(secret, token, expectedTargetId)
+    if (result) return { ...result, origin }
+  }
+  return null
+}
+
 export async function verifyToken(
   secret: string,
   token: string,
