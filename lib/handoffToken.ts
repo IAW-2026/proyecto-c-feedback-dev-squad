@@ -29,6 +29,7 @@ type HandoffPayload = {
   userId?: string;
   clerkId?: string;
   targetId: string;
+  productId?: string;
   exp: number;
 };
 
