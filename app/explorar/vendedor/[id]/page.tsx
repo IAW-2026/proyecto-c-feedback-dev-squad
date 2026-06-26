@@ -25,6 +25,7 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
 
   let tokenUserId: string | null = null
   let tokenOrigin: string | null = null
+  let productId: string | undefined = undefined
   if (!clerkUserId && sp?.token) {
     const verified = await verifyTokenAny(
       [
@@ -37,6 +38,7 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
     if (verified) {
       tokenUserId = verified.userId
       tokenOrigin = verified.origin
+      productId = verified.productId
     }
   }
 
@@ -47,7 +49,7 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
           {tokenOrigin ? (
             tokenOrigin === 'buyer' ? (
               <ThemeLink
-                href="https://zapasya.vercel.app/home"
+                href={productId ? `https://zapasya.vercel.app/products/${productId}` : "https://zapasya.vercel.app/home"}
                 aria-label="Ir a la app de compradores"
                 className="w-full inline-flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 shadow-sm sm:shadow-none dark:border-gray-600 rounded-full sm:rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
