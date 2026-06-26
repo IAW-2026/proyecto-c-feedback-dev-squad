@@ -57,7 +57,7 @@ export async function verifyTokenAny(
   candidates: { secret: string; origin: string }[],
   token: string,
   expectedTargetId: string
-): Promise<{ userId: string; origin: string } | null> {
+): Promise<{ userId: string; origin: string; productId?: string } | null> {
   for (const { secret, origin } of candidates) {
     const result = await verifyToken(secret, token, expectedTargetId)
     if (result) return { ...result, origin }
@@ -69,7 +69,7 @@ export async function verifyToken(
   secret: string,
   token: string,
   expectedTargetId: string
-): Promise<{ userId: string } | null> {
+): Promise<{ userId: string; productId?: string } | null> {
   const [payloadB64, sigB64] = token.split(".");
   if (!payloadB64 || !sigB64) return null;
 
@@ -92,7 +92,7 @@ export async function verifyToken(
 
     const id = payload.clerkId ?? payload.userId;
     if (!id) return null;
-    return { userId: id };
+    return { userId: id, productId: payload.productId };
   } catch {
     return null;
   }

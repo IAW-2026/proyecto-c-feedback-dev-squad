@@ -23,10 +23,9 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
   const { userId: clerkUserId } = await auth()
   const { targetName } = await resolveTargetName('seller', id)
 
-  const productId = sp?.productId as string | undefined
-
   let tokenUserId: string | null = null
   let tokenOrigin: string | null = null
+  let productId: string | undefined = undefined
   if (!clerkUserId && sp?.token) {
     const verified = await verifyTokenAny(
       [
@@ -39,6 +38,7 @@ export default async function VendedorReviewsPage({ params, searchParams }: Prop
     if (verified) {
       tokenUserId = verified.userId
       tokenOrigin = verified.origin
+      productId = verified.productId
     }
   }
 
